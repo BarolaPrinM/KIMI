@@ -216,22 +216,63 @@ class DriverDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupStatusControls() {
+        val user = sessionManager.getUser()
+        val truckId = user?.preferredTruck ?: "GT-001"
+        val database = com.google.firebase.database.FirebaseDatabase.getInstance("https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app")
+
         findViewById<android.view.View>(R.id.btn_start).setOnClickListener {
             checkLocationPermissions {
                 tvCurrentStatus.text = "ACTIVE"
-                tvCurrentStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32"))
+                tvCurrentStatus.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50")) // Green Background
+                tvCurrentStatus.setTextColor(android.graphics.Color.WHITE)
+                
                 startService(Intent(this, LocationUpdateService::class.java))
+                
+                database.getReference("truck_locations").child(truckId).child("status").setValue("active")
+                database.getReference("truck_locations").child(truckId).child("isFull").setValue(false)
             }
         }
         findViewById<android.view.View>(R.id.btn_pause).setOnClickListener {
-            tvCurrentStatus.text = "PAUSED"
-            tvCurrentStatus.setTextColor(android.graphics.Color.parseColor("#FFA000"))
-            stopService(Intent(this, LocationUpdateService::class.java))
+            tvCurrentStatus.text = "PAUSED (IDLE)"
+            tvCurrentStatus.setBackgroundColor(android.graphics.Color.parseColor("#FFC107")) // Yellow/Amber
+            tvCurrentStatus.setTextColor(android.graphics.Color.BLACK)
+            
+            // We keep the service running to track location even while idle, but update status
+            database.getReference("truck_locations").child(truckId).child("status").setValue("idle")
+        }
+        findViewById<android.view.View>(R.id.btn_full).setOnClickListener {
+            tvCurrentStatus.text = "FULL"
+            tvCurrentStatus.setBackgroundColor(android.graphics.Color.parseColor("#F44336")) // Red
+            tvCurrentStatus.setTextColor(android.graphics.Color.WHITE)
+            
+            database.getReference("truck_locations").child(truckId).child("isFull").setValue(true)
+            database.getReference("truck_locations").child(truckId).child("status").setValue("full")
+            
+            // Log full event for analytics
+            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+            val logRef = database.getReference("collection_logs").push()
+            val logData = mapOf(
+                "truckId" to truckId,
+                "timestamp" to System.currentTimeMillis(),
+                "type" to "FULL",
+                "date" to today
+            )
+            logRef.setValue(logData)
+            
+            android.widget.Toast.makeText(this, "Truck marked as FULL. Notifications stopped.", android.widget.Toast.LENGTH_SHORT).show()
         }
         findViewById<android.view.View>(R.id.btn_finish).setOnClickListener {
             tvCurrentStatus.text = "COMPLETED"
-            tvCurrentStatus.setTextColor(android.graphics.Color.parseColor("#1976D2"))
+            tvCurrentStatus.setBackgroundColor(android.graphics.Color.parseColor("#2196F3")) // Blue
+            tvCurrentStatus.setTextColor(android.graphics.Color.WHITE)
+            
+            database.getReference("truck_locations").child(truckId).child("status").setValue("completed")
+            database.getReference("truck_locations").child(truckId).child("isFull").setValue(false)
+            
+            // Stop service as the trip is done
             stopService(Intent(this, LocationUpdateService::class.java))
+            
+            // Note: status will be set to offline in LocationUpdateService.onDestroy()
         }
     }
 

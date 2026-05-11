@@ -85,7 +85,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="support@asiagarbage.com"
+                    android:text="support@garbagetracker.com"
                     android:textColor="#333333"
                     android:textSize="16sp" />
             </LinearLayout>

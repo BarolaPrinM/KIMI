@@ -91,6 +91,9 @@ class MapboxFragment : Fragment() {
     private var lastInsidePurok: String? = null
     private var hasCollectedFromAtLeastOneZone = false
 
+    // Accessibility for PredictionEngine to get zones
+    fun getPurokZones() = purokZones
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sessionManager = SessionManager(requireContext())
@@ -149,9 +152,18 @@ class MapboxFragment : Fragment() {
                 val bluePin = drawableToBitmap(locationDrawable, Color.parseColor("#2196F3"))
                 style.addImage("own-location-blue", bluePin)
 
-                // DRIVER MARKER (Red - for others to see)
-                val redPin = drawableToBitmap(locationDrawable, Color.parseColor("#F44336"))
+                // DRIVER MARKERS BY STATUS
+                val redPin = drawableToBitmap(locationDrawable, Color.parseColor("#F44336")) // FULL
                 style.addImage("driver-pin-red", redPin)
+
+                val greenPin = drawableToBitmap(locationDrawable, Color.parseColor("#4CAF50")) // ACTIVE
+                style.addImage("driver-pin-green", greenPin)
+
+                val yellowPin = drawableToBitmap(locationDrawable, Color.parseColor("#FFC107")) // IDLE
+                style.addImage("driver-pin-yellow", yellowPin)
+
+                val blueStatusPin = drawableToBitmap(locationDrawable, Color.parseColor("#2196F3")) // COMPLETED
+                style.addImage("driver-pin-blue", blueStatusPin)
             }
         } catch (e: Exception) {
             Log.e("MapboxFragment", "Error loading icons: ${e.message}")
@@ -353,18 +365,30 @@ class MapboxFragment : Fragment() {
 
         // 2. Update or Create markers and polylines
         trucks.forEach { truck ->
-            val currentPoint = Point.fromLngLat(truck.longitude, truck.latitude)
+            // Only show trucks that are NOT offline
+            if (truck.status == "offline") return@forEach
 
-            // Marker Update - Red for all drivers seen by others
+            val currentPoint = Point.fromLngLat(truck.longitude, truck.latitude)
+            
+            // Determine marker color and label color based on status
+            val (iconImage, statusColor) = when (truck.status.lowercase()) {
+                "active" -> "driver-pin-green" to Color.parseColor("#4CAF50")
+                "idle" -> "driver-pin-yellow" to Color.parseColor("#FFC107")
+                "full" -> "driver-pin-red" to Color.parseColor("#F44336")
+                "completed" -> "driver-pin-blue" to Color.parseColor("#2196F3")
+                else -> "driver-pin-red" to Color.RED
+            }
+
+            // Marker Update
             val existingAnnotation = truckAnnotations[truck.truckId]
             if (existingAnnotation == null) {
                 val truckOptions = PointAnnotationOptions()
                     .withPoint(currentPoint)
-                    .withIconImage("driver-pin-red")
+                    .withIconImage(iconImage)
                     .withIconSize(1.2)
                     .withIconAnchor(IconAnchor.BOTTOM)
-                    .withTextField("${truck.driverName ?: "Driver"}\n(Truck ${truck.truckId})")
-                    .withTextColor(Color.RED)
+                    .withTextField("${truck.driverName ?: "Driver"}\n(${truck.status.uppercase()})")
+                    .withTextColor(statusColor)
                     .withTextSize(11.0)
                     .withTextHaloColor(Color.WHITE)
                     .withTextHaloWidth(1.5)
@@ -374,19 +398,21 @@ class MapboxFragment : Fragment() {
                 }
             } else {
                 existingAnnotation.point = currentPoint
-                existingAnnotation.iconImage = "driver-pin-red"
-                existingAnnotation.textField = "${truck.driverName ?: "Driver"}\n(Truck ${truck.truckId})"
+                existingAnnotation.iconImage = iconImage
+                existingAnnotation.textField = "${truck.driverName ?: "Driver"}\n(${truck.status.uppercase()})"
+                existingAnnotation.textColorInt = statusColor
                 truckAnnotationManager?.update(existingAnnotation)
             }
 
-            // Polyline (Trail) Update - Red for consistency
+            // Polyline (Trail) Update - use status color
             val points = truckRoutePoints[truck.truckId] ?: mutableListOf()
             if (points.size >= 2) {
                 val existingPolyline = truckPolylines[truck.truckId]
+                val hexColor = String.format("#%06X", (0xFFFFFF and statusColor))
                 if (existingPolyline == null) {
                     val lineOptions = PolylineAnnotationOptions()
                         .withPoints(points)
-                        .withLineColor("#F44336") // Material Red
+                        .withLineColor(hexColor)
                         .withLineWidth(4.0)
                         .withLineJoin(LineJoin.ROUND)
                         .withLineOpacity(0.6)
@@ -395,7 +421,7 @@ class MapboxFragment : Fragment() {
                     }
                 } else {
                     existingPolyline.points = points
-                    existingPolyline.lineColorString = "#F44336"
+                    existingPolyline.lineColorString = hexColor
                     polylineAnnotationManager?.update(existingPolyline)
                 }
             }

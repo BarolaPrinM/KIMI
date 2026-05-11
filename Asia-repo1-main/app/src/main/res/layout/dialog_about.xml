@@ -28,7 +28,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="About ASIA"
+                android:text="About Garbage Tracker"
                 android:textColor="#1B5E20"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -38,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="ASIA (Automated Smart Integration for Alabat) is a comprehensive garbage truck tracking and management system designed to improve waste collection efficiency in our community."
+            android:text="Garbage Tracker is a comprehensive garbage truck tracking and management system designed to improve waste collection efficiency in our community."
             android:textColor="#333333"
             android:textSize="15sp"
             android:lineSpacingExtra="4dp" />
@@ -67,7 +67,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="© 2026 ASIA Project Team"
+                android:text="© 2026 Garbage Tracker Project Team"
                 android:textColor="#BDBDBD"
                 android:textSize="12sp" />
         </LinearLayout>

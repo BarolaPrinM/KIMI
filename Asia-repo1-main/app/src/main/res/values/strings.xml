@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Garbage Tracker</string>
     <string name="garbage_tracker">Garbage Tracker</string>
     <string name="barangay_info">Barangay Balintawak, Lipa City</string>
     <string name="sign_in_to_continue">Sign In to Continue</string>

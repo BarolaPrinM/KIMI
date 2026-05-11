@@ -63,6 +63,9 @@ dependencies {
     // Siguraduhin na Mapbox 11.3.0+ ang gamit sa libs.versions.toml
     implementation(libs.mapbox.maps)
 
+    // MPAndroidChart for Analytics
+    implementation(libs.mpandroidchart)
+
     // ==============================================
     // Mga Firebase dependencies
     // ==============================================

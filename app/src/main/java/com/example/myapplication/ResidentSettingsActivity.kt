@@ -13,6 +13,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.myapplication.utils.SessionManager
 import com.example.myapplication.utils.CustomNotification
+import com.example.myapplication.network.RetrofitClient
+import com.example.myapplication.models.ApiResponse
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 
@@ -144,20 +146,64 @@ class ResidentSettingsActivity : AppCompatActivity() {
         }
 
         if (layoutResId == R.layout.dialog_data_management) {
-            dialogView.findViewById<android.view.View>(R.id.btn_export_data)?.setOnClickListener {
-                showActionConfirmation("Export Data", "Are you sure you want to export your personal data?") {
-                    CustomNotification.showTopNotification(this, "Data exported successfully", false)
+            val user = sessionManager.getUser()
+            val etName = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_name)
+            val etEmail = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_email)
+            val etPhone = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_phone)
+            val spinnerPurok = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.spinner_purok)
+
+            etName?.setText(user?.name)
+            etEmail?.setText(user?.email)
+            etPhone?.setText(user?.phone)
+
+            val puroks = arrayOf("Purok 1", "Purok 2", "Purok 3", "Purok 4", "Purok 5", "Purok 6", "Purok 7")
+            val adapter = android.widget.ArrayAdapter(this, R.layout.dropdown_item, puroks)
+            spinnerPurok?.setAdapter(adapter)
+            spinnerPurok?.setText(user?.purok ?: puroks[0], false)
+
+            dialogView.findViewById<MaterialButton>(R.id.btn_save_profile)?.setOnClickListener {
+                val newName = etName?.text.toString().trim()
+                val newEmail = etEmail?.text.toString().trim()
+                val newPhone = etPhone?.text.toString().trim()
+                val newPurok = spinnerPurok?.text.toString()
+
+                if (newName.isEmpty() || newEmail.isEmpty() || newPhone.isEmpty()) {
+                    CustomNotification.showTopNotification(this, "Please fill in all fields")
+                    return@setOnClickListener
                 }
-            }
-            dialogView.findViewById<android.view.View>(R.id.btn_clear_cache)?.setOnClickListener {
-                showActionConfirmation("Clear Cache", "This will remove temporary files. Continue?") {
-                    CustomNotification.showTopNotification(this, "Cache cleared successfully", false)
-                }
-            }
-            dialogView.findViewById<android.view.View>(R.id.btn_delete_account)?.setOnClickListener {
-                showActionConfirmation("Delete Account", "Are you sure? This action cannot be undone.") {
-                    CustomNotification.showTopNotification(this, "Account deletion request sent", false)
-                }
+
+                RetrofitClient.instance.updateResidentProfile(
+                    user?.userId ?: 0,
+                    newName,
+                    newEmail,
+                    newPhone,
+                    newPurok
+                ).enqueue(object : retrofit2.Callback<ApiResponse> {
+                    override fun onResponse(call: retrofit2.Call<ApiResponse>, response: retrofit2.Response<ApiResponse>) {
+                        if (response.isSuccessful && response.body()?.success == true) {
+                            // Update local session
+                            val updatedUser = user?.copy(
+                                name = newName,
+                                email = newEmail,
+                                phone = newPhone,
+                                purok = newPurok
+                            )
+                            if (updatedUser != null) {
+                                sessionManager.saveUser(updatedUser)
+                                setupProfileData() // Refresh UI in background
+                            }
+                            CustomNotification.showTopNotification(this@ResidentSettingsActivity, "Profile updated successfully!", false)
+                            alertDialog.dismiss()
+                        } else {
+                            val msg = response.body()?.message ?: "Update failed"
+                            CustomNotification.showTopNotification(this@ResidentSettingsActivity, msg)
+                        }
+                    }
+
+                    override fun onFailure(call: retrofit2.Call<ApiResponse>, t: Throwable) {
+                        CustomNotification.showTopNotification(this@ResidentSettingsActivity, "Connection Error")
+                    }
+                })
             }
         }
 

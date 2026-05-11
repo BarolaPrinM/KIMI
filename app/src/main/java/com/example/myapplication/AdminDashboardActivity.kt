@@ -48,7 +48,13 @@
             }
         }
 
-        private var logoutDialog: AlertDialog? = null
+    private var logoutDialog: AlertDialog? = null
+
+        private val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+        private val database = FirebaseDatabase.getInstance(dbUrl)
+        private var truckListener: ValueEventListener? = null
+        private var residentListener: ValueEventListener? = null
+        private var coverageListener: ValueEventListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
@@ -158,11 +164,57 @@
         override fun onResume() {
             super.onResume()
             complaintsHandler.post(complaintsRunnable)
+            setupRealtimeMetrics()
         }
 
         override fun onPause() {
             super.onPause()
             complaintsHandler.removeCallbacks(complaintsRunnable)
+            removeRealtimeMetrics()
+        }
+
+        private fun setupRealtimeMetrics() {
+            // 1. Active Trucks Listener
+            truckListener = database.getReference("truck_locations").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    tvActiveTrucks.text = snapshot.childrenCount.toString()
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+
+            // 2. Residents Count Listener
+            residentListener = database.getReference("resident_locations").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    tvResidentsCount.text = snapshot.childrenCount.toString()
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+
+            // 3. Coverage % Listener
+            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+            coverageListener = database.getReference("collection_logs").orderByChild("date").equalTo(today)
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val visitedZones = mutableSetOf<String>()
+                        for (log in snapshot.children) {
+                            val zoneName = log.child("zoneName").getValue(String::class.java)
+                            if (zoneName != null) visitedZones.add(zoneName)
+                        }
+                        
+                        val totalZones = 12 // As defined in PurokZones
+                        val percentage = (visitedZones.size.toDouble() / totalZones * 100).toInt()
+                        
+                        tvCoveragePercent.text = "$percentage%"
+                        tvRoutesCompleted.text = "${visitedZones.size} / $totalZones"
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+        }
+
+        private fun removeRealtimeMetrics() {
+            truckListener?.let { database.getReference("truck_locations").removeEventListener(it) }
+            residentListener?.let { database.getReference("resident_locations").removeEventListener(it) }
+            coverageListener?.let { database.getReference("collection_logs").removeEventListener(it) }
         }
 
         private fun fetchComplaintsCount() {

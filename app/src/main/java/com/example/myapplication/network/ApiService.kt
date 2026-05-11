@@ -80,4 +80,14 @@ interface ApiService {
         @Field("phone") phone: String,
         @Field("password") password: String
     ): Call<ApiResponse>
+
+    @FormUrlEncoded
+    @POST("update_resident_profile.php")
+    fun updateResidentProfile(
+        @Field("user_id") userId: Int,
+        @Field("name") name: String,
+        @Field("email") email: String,
+        @Field("phone") phone: String,
+        @Field("purok") purok: String
+    ): Call<ApiResponse>
 }

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="595dp"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GARBAGE TRACKING SYSTEM"
+            android:textColor="#00BFA5"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Official Analytics &amp; Performance Report"
+            android:textColor="#757575"
+            android:textSize="12sp"
+            android:textStyle="italic" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="12dp"
+            android:background="#00BFA5" />
+    </LinearLayout>
+
+    <!-- Meta Info - FIXED LAYOUT -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#F5F5F5"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_pdf_report_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Report Type: All Reports"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_pdf_period"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Period: 2026-05-11 to 2026-05-11"
+            android:textColor="@color/black"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_pdf_generated_at"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Generated: May 11, 2026 04:07 PM"
+            android:textColor="#616161"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Section 1: Introduction -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="1. Introduction"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:lineSpacingExtra="4dp"
+        android:text="This document provides a comprehensive summary of the garbage collection system's performance and operational data for the specified period. The report includes visual analytics from the monitoring dashboard, highlighting fleet status, complaints distribution, and area coverage frequency."
+        android:textColor="#424242"
+        android:textSize="13sp" />
+
+    <!-- Section 2: Visual Analytics -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="2. Visual Analytics"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Truck Status"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/img_chart_truck"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="4dp"
+                android:scaleType="fitCenter"
+                android:contentDescription="Truck Chart" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Complaints"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/img_chart_complaints"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="4dp"
+                android:scaleType="fitCenter"
+                android:contentDescription="Complaints Chart" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Purok Coverage Frequency"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+        <ImageView
+            android:id="@+id/img_chart_coverage"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginTop="4dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="Coverage Chart" />
+    </LinearLayout>
+
+    <!-- Section 3: Summary -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="3. Executive Summary"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="#E0F2F1"
+        android:orientation="vertical"
+        android:padding="16dp">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="2dp"
+            android:text="Based on the visualized data above, the system demonstrates active fleet engagement. The coverage frequency highlights areas with consistent collection vs areas that may need optimization. This report serves as an official record for system performance evaluation."
+            android:textColor="#00695C"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Footer -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:gravity="center"
+        android:text="Generated by GarbageSis System © 2026. All rights reserved."
+        android:textColor="#9E9E9E"
+        android:textSize="10sp" />
+
+</LinearLayout>

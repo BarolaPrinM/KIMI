@@ -123,29 +123,28 @@
                     </com.google.android.material.card.MaterialCardView>
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-                <!-- Action Buttons -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="16dp"
                     android:layout_marginTop="-30dp"
                     android:orientation="horizontal"
-                    android:weightSum="3">
+                    android:weightSum="4">
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/btn_start"
                         android:layout_width="0dp"
                         android:layout_height="60dp"
                         android:layout_weight="1"
-                        android:layout_margin="6dp"
+                        android:layout_margin="4dp"
                         android:clickable="true"
                         android:focusable="true"
                         app:cardBackgroundColor="#4CAF50"
-                        app:cardCornerRadius="16dp"
+                        app:cardCornerRadius="12dp"
                         app:cardElevation="8dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_media_play" app:tint="@color/white" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="START" android:textColor="@color/white" android:textSize="10sp" android:textStyle="bold" />
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_media_play" app:tint="@color/white" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="START" android:textColor="@color/white" android:textSize="9sp" android:textStyle="bold" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -154,15 +153,32 @@
                         android:layout_width="0dp"
                         android:layout_height="60dp"
                         android:layout_weight="1"
-                        android:layout_margin="6dp"
+                        android:layout_margin="4dp"
                         android:clickable="true"
                         android:focusable="true"
                         app:cardBackgroundColor="#FFA000"
-                        app:cardCornerRadius="16dp"
+                        app:cardCornerRadius="12dp"
                         app:cardElevation="8dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_media_pause" app:tint="@color/white" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PAUSE" android:textColor="@color/white" android:textSize="10sp" android:textStyle="bold" />
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_media_pause" app:tint="@color/white" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PAUSE" android:textColor="@color/white" android:textSize="9sp" android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_full"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="#E91E63"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="8dp">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_truck" app:tint="@color/white" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FULL" android:textColor="@color/white" android:textSize="9sp" android:textStyle="bold" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -171,15 +187,15 @@
                         android:layout_width="0dp"
                         android:layout_height="60dp"
                         android:layout_weight="1"
-                        android:layout_margin="6dp"
+                        android:layout_margin="4dp"
                         android:clickable="true"
                         android:focusable="true"
                         app:cardBackgroundColor="#1976D2"
-                        app:cardCornerRadius="16dp"
+                        app:cardCornerRadius="12dp"
                         app:cardElevation="8dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_check" app:tint="@color/white" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="COMPLETE" android:textColor="@color/white" android:textSize="10sp" android:textStyle="bold" />
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_check" app:tint="@color/white" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DONE" android:textColor="@color/white" android:textSize="9sp" android:textStyle="bold" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>

@@ -36,7 +36,7 @@
             android:layout_marginStart="12dp"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btn_export"
+            app:layout_constraintEnd_toStartOf="@id/layout_header_buttons"
             app:layout_constraintStart_toEndOf="@id/btn_back"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -56,24 +56,44 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_export"
+        <LinearLayout
+            android:id="@+id/layout_header_buttons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="#00BFA5"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="Export"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            app:cornerRadius="12dp"
-            app:icon="@drawable/ic_download"
-            app:iconSize="16dp"
-            app:iconTint="@color/white"
+            android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_select_date"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Today"
+                android:textAllCaps="false"
+                android:textColor="@color/primary_blue"
+                android:textSize="14sp"
+                app:icon="@drawable/ic_calendar"
+                app:iconSize="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_export"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#00BFA5"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Export"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_download"
+                app:iconSize="16dp"
+                app:iconTint="@color/white" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -135,10 +155,11 @@
                         </LinearLayout>
 
                         <TextView
+                            android:id="@+id/tv_analytics_routes_done"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:text="5/8"
+                            android:text="0/0"
                             android:textColor="#1B5E20"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -192,10 +213,11 @@
                         </LinearLayout>
 
                         <TextView
+                            android:id="@+id/tv_analytics_coverage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:text="85%"
+                            android:text="0%"
                             android:textColor="#E65100"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -248,60 +270,12 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Placeholder for Pie Chart -->
-                    <FrameLayout
+                    <!-- Actual Pie Chart -->
+                    <com.github.mikephil.charting.charts.PieChart
+                        android:id="@+id/chart_truck_status"
                         android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:layout_marginTop="16dp">
-
-                        <ImageView
-                            android:layout_width="160dp"
-                            android:layout_height="160dp"
-                            android:layout_gravity="center"
-                            android:src="@android:drawable/presence_online"
-                            android:alpha="0.2" />
-
-                        <!-- Simplified visual representation -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="top|start"
-                            android:layout_marginStart="40dp"
-                            android:text="Active: 2"
-                            android:textColor="@color/status_green"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="bottom|end"
-                            android:layout_marginEnd="40dp"
-                            android:text="Idle: 1"
-                            android:textColor="@color/status_yellow"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_vertical|end"
-                            android:text="Maintenance: 0"
-                            android:textColor="@color/text_gray"
-                            android:textStyle="bold" />
-                    </FrameLayout>
-
-                    <!-- Legend -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_marginTop="8dp">
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="@color/status_green" android:layout_gravity="center_vertical"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Active" android:textSize="12sp" android:layout_marginEnd="16dp"/>
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="@color/status_yellow" android:layout_gravity="center_vertical"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Idle" android:textSize="12sp" android:layout_marginEnd="16dp"/>
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="@color/text_gray" android:layout_gravity="center_vertical"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Maintenance" android:textSize="12sp"/>
-                    </LinearLayout>
+                        android:layout_height="220dp"
+                        android:layout_marginTop="16dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -343,60 +317,12 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Placeholder for Pie Chart -->
-                    <FrameLayout
+                    <!-- Actual Pie Chart -->
+                    <com.github.mikephil.charting.charts.PieChart
+                        android:id="@+id/chart_complaints_status"
                         android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:layout_marginTop="16dp">
-
-                        <ImageView
-                            android:layout_width="160dp"
-                            android:layout_height="160dp"
-                            android:layout_gravity="center"
-                            android:src="@android:drawable/presence_invisible"
-                            android:alpha="0.2" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="top|end"
-                            android:layout_marginEnd="40dp"
-                            android:text="Pending: 1"
-                            android:textColor="@color/status_yellow"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_vertical|start"
-                            android:layout_marginStart="20dp"
-                            android:text="In Progress: 1"
-                            android:textColor="@color/primary_blue"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="bottom|end"
-                            android:layout_marginEnd="40dp"
-                            android:text="Resolved: 1"
-                            android:textColor="@color/status_green"
-                            android:textStyle="bold" />
-                    </FrameLayout>
-
-                    <!-- Legend -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_marginTop="8dp">
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="@color/status_yellow" android:layout_gravity="center_vertical"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Pending" android:textSize="12sp" android:layout_marginEnd="16dp"/>
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="@color/primary_blue" android:layout_gravity="center_vertical"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" In Progress" android:textSize="12sp" android:layout_marginEnd="16dp"/>
-                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="@color/status_green" android:layout_gravity="center_vertical"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Resolved" android:textSize="12sp"/>
-                    </LinearLayout>
+                        android:layout_height="220dp"
+                        android:layout_marginTop="16dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -429,40 +355,56 @@
                             android:src="@drawable/ic_location"
                             app:tint="@color/black" />
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
+                            android:layout_weight="1"
                             android:text="Purok Coverage (%)"
                             android:textColor="@color/black"
                             android:textSize="16sp"
                             android:textStyle="bold" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_select_purok"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Select Area"
+                            android:textAllCaps="false"
+                            android:textColor="@color/primary_blue"
+                            android:textSize="12sp"
+                            app:icon="@drawable/ic_navigation"
+                            app:iconSize="14dp" />
                     </LinearLayout>
 
-                    <!-- Simplified Bar Chart Visual -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="150dp"
-                        android:layout_marginTop="16dp"
-                        android:gravity="bottom"
-                        android:orientation="horizontal">
-
-                        <View android:layout_width="0dp" android:layout_height="120dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:background="@color/primary_blue" />
-                        <View android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:background="@color/primary_blue" />
-                        <View android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:background="@color/primary_blue" />
-                        <View android:layout_width="0dp" android:layout_height="70dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:background="@color/primary_blue" />
-                        <View android:layout_width="0dp" android:layout_height="110dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:background="@color/primary_blue" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/tv_selected_purok_name"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Viewing: All Areas"
+                        android:textColor="@color/text_gray"
+                        android:textSize="12sp"
+                        android:textStyle="italic" />
+
+                    <!-- Actual Bar Chart -->
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/chart_purok_coverage"
+                        android:layout_width="match_parent"
+                        android:layout_height="220dp"
+                        android:layout_marginTop="8dp" />
+
+                    <!-- Dynamic Legend for Purok Selection -->
+                    <LinearLayout
+                        android:id="@+id/layout_purok_legend"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
                         android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="P1" android:gravity="center" android:textSize="10sp" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="P2" android:gravity="center" android:textSize="10sp" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="P3" android:gravity="center" android:textSize="10sp" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="P4" android:gravity="center" android:textSize="10sp" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="P5" android:gravity="center" android:textSize="10sp" />
+                        android:visibility="gone">
+                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#4CAF50" android:layout_gravity="center_vertical"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Collected" android:textSize="12sp" android:layout_marginEnd="16dp"/>
+                        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#F44336" android:layout_gravity="center_vertical"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" Uncollected (Full)" android:textSize="12sp"/>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -496,36 +438,49 @@
                             android:src="@drawable/ic_speed"
                             app:tint="@color/black" />
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
+                            android:layout_weight="1"
                             android:text="Route Efficiency"
                             android:textColor="@color/black"
                             android:textSize="16sp"
                             android:textStyle="bold" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_select_purok_efficiency"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Select Area"
+                            android:textAllCaps="false"
+                            android:textColor="@color/primary_blue"
+                            android:textSize="12sp"
+                            app:icon="@drawable/ic_navigation"
+                            app:iconSize="14dp" />
                     </LinearLayout>
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:gravity="center_vertical">
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Avg Collection Time" android:textColor="@color/text_gray" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3.5 hours" android:textStyle="bold" />
-                    </LinearLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginVertical="12dp" />
-
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Fuel Efficiency" android:textColor="@color/text_gray" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="12 km/L" android:textStyle="bold" />
+                        <TextView android:id="@+id/tv_avg_collection_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0.0 hours" android:textStyle="bold" />
                     </LinearLayout>
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginVertical="12dp" />
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Stops per Route" android:textColor="@color/text_gray" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="45 stops" android:textStyle="bold" />
+                        <TextView android:id="@+id/tv_stops_per_route" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 stops" android:textStyle="bold" />
                     </LinearLayout>
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginVertical="12dp" />
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Distance Covered" android:textColor="@color/text_gray" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="42.5 km" android:textStyle="bold" />
+                        <TextView android:id="@+id/tv_distance_covered" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0.0 km" android:textStyle="bold" />
+                    </LinearLayout>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginVertical="12dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Prediction Error (MAE)" android:textColor="@color/text_gray" />
+                        <TextView android:id="@+id/tv_prediction_mae" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0.0s" android:textStyle="bold" android:textColor="@color/status_green" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -579,15 +534,15 @@
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Tomorrow:" android:textColor="#546E7A" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="850 kg" android:textColor="@color/primary_blue" android:textStyle="bold" />
+                        <TextView android:id="@+id/tv_waste_tomorrow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="850 kg" android:textColor="@color/primary_blue" android:textStyle="bold" />
                     </LinearLayout>
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp">
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="This Week:" android:textColor="#546E7A" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5,200 kg" android:textColor="@color/primary_blue" android:textStyle="bold" />
+                        <TextView android:id="@+id/tv_waste_week" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5,200 kg" android:textColor="@color/primary_blue" android:textStyle="bold" />
                     </LinearLayout>
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Peak Day:" android:textColor="#546E7A" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Monday" android:textColor="@color/primary_blue" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Truck Capacity:" android:textColor="#546E7A" />
+                        <TextView android:id="@+id/tv_truck_capacity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5,000 kg" android:textColor="@color/primary_blue" android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -655,9 +610,9 @@
                         android:textColor="#9C27B0"
                         android:textStyle="bold" />
 
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="• Add one more truck on Mondays" android:textColor="#9C27B0" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="• Route A can save 15 minutes" android:textColor="#9C27B0" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="• Purok 4 requests earlier time" android:textColor="#9C27B0" />
+                    <TextView android:id="@+id/tv_rec_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="• Add one more truck on Mondays" android:textColor="#9C27B0" />
+                    <TextView android:id="@+id/tv_rec_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="• Route A can save 15 minutes" android:textColor="#9C27B0" />
+                    <TextView android:id="@+id/tv_rec_3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="• Purok 4 requests earlier time" android:textColor="#9C27B0" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

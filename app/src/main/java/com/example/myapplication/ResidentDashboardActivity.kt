@@ -214,9 +214,53 @@ class ResidentDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, ResidentComplaintsActivity::class.java))
         }
 
+        findViewById<MaterialCardView>(R.id.cardRateService).setOnClickListener {
+            showFeedbackDialog()
+        }
+
         findViewById<TextView>(R.id.tvFullMap).setOnClickListener {
             startActivity(Intent(this, TrackTrucksActivity::class.java))
         }
+    }
+
+    private fun showFeedbackDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_feedback, null)
+        val alertDialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val ratingBar = dialogView.findViewById<android.widget.RatingBar>(R.id.ratingBar)
+        val etFeedback = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etFeedback)
+        val btnSubmit = dialogView.findViewById<Button>(R.id.btnSubmitFeedback)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
+
+        btnCancel.setOnClickListener { alertDialog.dismiss() }
+
+        btnSubmit.setOnClickListener {
+            val rating = ratingBar.rating
+            val feedbackText = etFeedback.text.toString()
+            val user = sessionManager.getUser()
+
+            val feedbackData = mapOf(
+                "userId" to (user?.userId ?: 0),
+                "userName" to (user?.name ?: "Anonymous"),
+                "rating" to rating,
+                "feedback" to feedbackText,
+                "timestamp" to System.currentTimeMillis()
+            )
+
+            val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+            FirebaseDatabase.getInstance(dbUrl).getReference("user_evaluations").push().setValue(feedbackData)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Thank you for your feedback!", Toast.LENGTH_SHORT).show()
+                    alertDialog.dismiss()
+                }
+        }
+
+        alertDialog.show()
     }
 
     private fun setupBottomNavigation() {
