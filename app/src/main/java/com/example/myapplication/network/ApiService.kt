@@ -48,6 +48,14 @@ interface ApiService {
         @Field("is_full") isFull: Boolean
     ): Call<ApiResponse>
 
+    @FormUrlEncoded
+    @POST("log_collection.php")
+    fun logCollection(
+        @Field("truck_id") truckId: String,
+        @Field("zone_name") zoneName: String,
+        @Field("type") type: String
+    ): Call<ApiResponse>
+
     @GET("get_locations.php")
     fun getLocations(): Call<LocationsResponse>
 
@@ -90,4 +98,7 @@ interface ApiService {
         @Field("phone") phone: String,
         @Field("purok") purok: String
     ): Call<ApiResponse>
+
+    @POST("archive_user.php")
+    fun archiveUser(@Body request: ArchiveRequest): Call<ApiResponse>
 }

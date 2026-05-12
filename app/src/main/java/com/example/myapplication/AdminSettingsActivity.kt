@@ -12,8 +12,9 @@ import com.example.myapplication.utils.SessionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.widget.ImageButton
 import android.widget.TextView
-import com.example.myapplication.utils.CustomNotification
+import android.widget.Toast
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class AdminSettingsActivity : AppCompatActivity() {
     private lateinit var sessionManager: SessionManager
@@ -41,14 +42,22 @@ class AdminSettingsActivity : AppCompatActivity() {
     }
 
     private fun setupSettingsActions() {
+        val switchEmail = findViewById<SwitchMaterial>(R.id.switch_email_notifications)
+        val switchApp = findViewById<SwitchMaterial>(R.id.switch_app_notifications)
 
-        findViewById<android.view.View>(R.id.row_manage_trucks).setOnClickListener {
-            showModal(R.layout.dialog_manage_trucks)
+        switchEmail.isChecked = sessionManager.isEmailNotificationsEnabled()
+        switchApp.isChecked = sessionManager.isAppNotificationsEnabled()
+
+        switchEmail.setOnCheckedChangeListener { _, isChecked ->
+            sessionManager.setEmailNotificationsEnabled(isChecked)
+            Toast.makeText(this, "Email notifications ${if (isChecked) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
         }
 
-        findViewById<android.view.View>(R.id.row_route_planning).setOnClickListener {
-            showModal(R.layout.dialog_route_planning)
+        switchApp.setOnCheckedChangeListener { _, isChecked ->
+            sessionManager.setAppNotificationsEnabled(isChecked)
+            Toast.makeText(this, "App notifications ${if (isChecked) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
         }
+
         findViewById<android.view.View>(R.id.row_change_password).setOnClickListener {
             showModal(R.layout.dialog_change_password)
         }
@@ -85,27 +94,6 @@ class AdminSettingsActivity : AppCompatActivity() {
             statusSpinner.setText(statuses[0], false)
         }
 
-        // Additional logic for specific dialogs if needed
-        if (layoutResId == R.layout.dialog_manage_trucks) {
-            dialogView.findViewById<android.view.View>(R.id.btn_add_new_truck)?.setOnClickListener {
-                showModal(R.layout.dialog_add_truck)
-            }
-            dialogView.findViewById<android.view.View>(R.id.btn_edit_truck_1)?.setOnClickListener {
-                showEditTruckModal("Truck-001", "ABC-123", "John Doe", "Active")
-            }
-            dialogView.findViewById<android.view.View>(R.id.btn_edit_truck_2)?.setOnClickListener {
-                showEditTruckModal("Truck-002", "XYZ-789", "Robert Smith", "Maintenance")
-            }
-        }
-
-        if (layoutResId == R.layout.dialog_add_truck) {
-            dialogView.findViewById<MaterialButton>(R.id.btn_save_truck)?.setOnClickListener {
-                // Handle saving truck
-                android.widget.Toast.makeText(this, "Truck Saved Successfully", android.widget.Toast.LENGTH_SHORT).show()
-                alertDialog.dismiss()
-            }
-        }
-
         if (layoutResId == R.layout.dialog_change_password) {
             val etNewPassword = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_new_password)
             val etConfirmPassword = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_confirm_password)
@@ -137,47 +125,9 @@ class AdminSettingsActivity : AppCompatActivity() {
 
                 if (isValid) {
                     // Handle password update
-                    CustomNotification.showTopNotification(this, "Successful updated password", false)
                     alertDialog.dismiss()
                 }
             }
-        }
-
-        alertDialog.show()
-    }
-
-    private fun showEditTruckModal(truckId: String, plateNumber: String, driverName: String, status: String) {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_truck, null)
-        val alertDialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .setCancelable(true)
-            .create()
-
-        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        // Setup status dropdown
-        val statusSpinner = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.spinner_status)
-        val statuses = arrayOf("Active", "Inactive", "Maintenance")
-        val adapter = android.widget.ArrayAdapter(this, R.layout.dropdown_item, statuses)
-        statusSpinner?.setAdapter(adapter)
-
-        // Set current values
-        dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "Edit Truck"
-        dialogView.findViewById<android.widget.EditText>(R.id.et_truck_id)?.setText(truckId)
-        dialogView.findViewById<android.widget.EditText>(R.id.et_plate_number)?.setText(plateNumber)
-        dialogView.findViewById<android.widget.EditText>(R.id.et_driver_name)?.setText(driverName)
-        statusSpinner?.setText(status, false)
-
-        dialogView.findViewById<MaterialButton>(R.id.btn_save_truck)?.text = "Update Truck"
-
-        dialogView.findViewById<android.view.View>(R.id.btn_close)?.setOnClickListener {
-            alertDialog.dismiss()
-        }
-
-        dialogView.findViewById<MaterialButton>(R.id.btn_save_truck)?.setOnClickListener {
-            // Handle update logic
-            android.widget.Toast.makeText(this, "Truck Updated Successfully", android.widget.Toast.LENGTH_SHORT).show()
-            alertDialog.dismiss()
         }
 
         alertDialog.show()
@@ -249,12 +199,6 @@ class AdminSettingsActivity : AppCompatActivity() {
                 }
                 R.id.nav_complaints -> {
                     startActivity(Intent(this, ComplaintsActivity::class.java))
-                    overridePendingTransition(0, 0)
-                    finish()
-                    true
-                }
-                R.id.nav_users -> {
-                    startActivity(Intent(this, UserManagementActivity::class.java))
                     overridePendingTransition(0, 0)
                     finish()
                     true

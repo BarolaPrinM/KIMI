@@ -53,6 +53,7 @@
         <activity android:name=".TrackTrucksActivity" android:exported="false" />
         <activity android:name=".ResidentComplaintsActivity" android:exported="false" />
         <activity android:name=".ResidentSettingsActivity" android:exported="false" />
+        <activity android:name=".DriverIssuesActivity" android:exported="false" />
         <activity android:name=".ForgotPasswordActivity" android:exported="false" />
 
         <service

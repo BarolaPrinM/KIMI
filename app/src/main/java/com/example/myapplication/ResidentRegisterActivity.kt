@@ -69,7 +69,11 @@ class ResidentRegisterActivity : AppCompatActivity() {
     }
 
     private fun setupPurokSpinner() {
-        val puroks = arrayOf("Choose Purok...", "Purok 1", "Purok 2", "Purok 3", "Purok 4", "Purok 5", "Purok 6", "Purok 7")
+        val puroks = arrayOf(
+            "Choose Purok...", "Purok 2", "Purok 3", "Purok 4", "Dos Riles", 
+            "Sentro", "San Isidro", "Paraiso", "Riverside", "Kalaw Street", 
+            "Home Subdivision", "Tanco Road / Ayala Highway", "Brixton Area"
+        )
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, puroks)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerPurok.adapter = adapter

@@ -49,6 +49,16 @@ class MapboxFragment : Fragment() {
         }
     }
 
+    interface OnTrucksUpdatedListener {
+        fun onTrucksUpdated(trucks: List<com.example.myapplication.models.TruckLocation>)
+    }
+
+    private var trucksUpdatedListener: OnTrucksUpdatedListener? = null
+
+    fun setOnTrucksUpdatedListener(listener: OnTrucksUpdatedListener) {
+        trucksUpdatedListener = listener
+    }
+
     private var mapView: MapView? = null
     private var truckAnnotationManager: PointAnnotationManager? = null
     private var residentAnnotationManager: PointAnnotationManager? = null
@@ -58,8 +68,13 @@ class MapboxFragment : Fragment() {
 
     private var truckAnnotations = mutableMapOf<String, PointAnnotation>()
     private var residentAnnotations = mutableMapOf<String, PointAnnotation>()
-    private var truckPolylines = mutableMapOf<String, PolylineAnnotation>()
-    private var truckRoutePoints = mutableMapOf<String, MutableList<Point>>()
+    private var truckPolylines = mutableMapOf<String, MutableList<PolylineAnnotation>>()
+    private var truckRoutePoints = mutableMapOf<String, MutableList<RoutePoint>>()
+    private var optimizedPolylines = mutableMapOf<String, PolylineAnnotation>()
+
+    data class RoutePoint(val point: Point, val speed: Double, val timestamp: Long = 0)
+    data class AnalyticsData(val distanceKm: Double, val fuelLiters: Double, val stops: Int)
+    data class CoverageItem(val name: String, val isCompleted: Boolean, val completionTime: String?)
 
     private var mapMode: String = MODE_DASHBOARD
     private lateinit var sessionManager: SessionManager
@@ -86,12 +101,6 @@ class MapboxFragment : Fragment() {
         PurokZone("Brixton Area", 13.9382, 121.1552, 230.0)
     )
 
-    private val notifiedZones = mutableSetOf<String>()
-    private val etaNotifiedZones = mutableSetOf<String>()
-    private var lastInsidePurok: String? = null
-    private var hasCollectedFromAtLeastOneZone = false
-
-    // Accessibility for PredictionEngine to get zones
     fun getPurokZones() = purokZones
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,32 +122,16 @@ class MapboxFragment : Fragment() {
 
     private fun setupMap() {
         val mapboxMap = mapView?.mapboxMap ?: return
-
-        // ✅ EXACT COORDINATES FROM YOUR SCREENSHOT
-        val balintawakPoint = Point.fromLngLat(
-            121.158888,   // Longitude: exact from your image
-            13.955805     // Latitude: exact from your image
-        )
-
-        val defaultCamera = CameraOptions.Builder()
-            .center(balintawakPoint)
-            .zoom(13.0)    // Perfect zoom to match the view and area size
-            .pitch(0.0)
-            .bearing(0.0)
-            .build()
-
+        val balintawakPoint = Point.fromLngLat(121.158888, 13.955805)
+        val defaultCamera = CameraOptions.Builder().center(balintawakPoint).zoom(13.0).pitch(0.0).bearing(0.0).build()
         mapboxMap.setCamera(defaultCamera)
-
         mapboxMap.loadStyle(Style.OUTDOORS) { style ->
             isStyleLoaded = true
             loadMarkerIcons(style)
             setupAnnotationManagers()
             enableUserLocationComponent()
             setupFirebaseSync()
-
-            // If we have pending data, apply it now
             if (currentTrucks.isNotEmpty()) updateTrucks(currentTrucks)
-
             mapboxMap.setCamera(defaultCamera)
         }
     }
@@ -148,34 +141,17 @@ class MapboxFragment : Fragment() {
         try {
             val locationDrawable = ContextCompat.getDrawable(ctx, R.drawable.ic_location)
             if (locationDrawable != null) {
-                // OWN LOCATION (Blue - standardized)
-                val bluePin = drawableToBitmap(locationDrawable, Color.parseColor("#2196F3"))
-                style.addImage("own-location-blue", bluePin)
-
-                // DRIVER MARKERS BY STATUS
-                val redPin = drawableToBitmap(locationDrawable, Color.parseColor("#F44336")) // FULL
-                style.addImage("driver-pin-red", redPin)
-
-                val greenPin = drawableToBitmap(locationDrawable, Color.parseColor("#4CAF50")) // ACTIVE
-                style.addImage("driver-pin-green", greenPin)
-
-                val yellowPin = drawableToBitmap(locationDrawable, Color.parseColor("#FFC107")) // IDLE
-                style.addImage("driver-pin-yellow", yellowPin)
-
-                val blueStatusPin = drawableToBitmap(locationDrawable, Color.parseColor("#2196F3")) // COMPLETED
-                style.addImage("driver-pin-blue", blueStatusPin)
+                style.addImage("own-location-blue", drawableToBitmap(locationDrawable, Color.parseColor("#2196F3")))
+                style.addImage("driver-pin-red", drawableToBitmap(locationDrawable, Color.parseColor("#F44336")))
+                style.addImage("driver-pin-green", drawableToBitmap(locationDrawable, Color.parseColor("#4CAF50")))
+                style.addImage("driver-pin-yellow", drawableToBitmap(locationDrawable, Color.parseColor("#FFC107")))
+                style.addImage("driver-pin-blue", drawableToBitmap(locationDrawable, Color.parseColor("#2196F3")))
             }
-        } catch (e: Exception) {
-            Log.e("MapboxFragment", "Error loading icons: ${e.message}")
-        }
+        } catch (e: Exception) { Log.e("MapboxFragment", "Error loading icons: ${e.message}") }
     }
 
     private fun drawableToBitmap(drawable: Drawable, tintColor: Int? = null): Bitmap {
-        val bitmap = Bitmap.createBitmap(
-            drawable.intrinsicWidth.takeIf { it > 0 } ?: 64,
-            drawable.intrinsicHeight.takeIf { it > 0 } ?: 64,
-            Bitmap.Config.ARGB_8888
-        )
+        val bitmap = Bitmap.createBitmap(drawable.intrinsicWidth.takeIf { it > 0 } ?: 64, drawable.intrinsicHeight.takeIf { it > 0 } ?: 64, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, canvas.width, canvas.height)
         tintColor?.let { drawable.setTint(it) }
@@ -193,193 +169,118 @@ class MapboxFragment : Fragment() {
     }
 
     private fun enableUserLocationComponent() {
-        if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-
+        if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
         val locationComponentPlugin = mapView?.location
-        locationComponentPlugin?.updateSettings {
-            enabled = true
-            pulsingEnabled = true
-        }
+        locationComponentPlugin?.updateSettings { enabled = true; pulsingEnabled = true }
         locationComponentPlugin?.addOnIndicatorPositionChangedListener(object : OnIndicatorPositionChangedListener {
-            override fun onIndicatorPositionChanged(point: Point) {
-                updateUserMarker(point)
-            }
+            override fun onIndicatorPositionChanged(point: Point) { updateUserMarker(point) }
         })
     }
 
     private fun updateUserMarker(point: Point) {
-        val user = sessionManager.getUser()
-        val name = user?.name ?: "Me"
-        
-        // Own location is always blue as per your preference
-        val iconImage = "own-location-blue"
-
+        val name = sessionManager.getUser()?.name ?: "Me"
         val annotation = userLocationAnnotation
         if (annotation == null) {
-            val options = PointAnnotationOptions()
-                .withPoint(point)
-                .withIconImage(iconImage)
-                .withIconSize(1.2)
-                .withTextField("$name (You)")
-                .withTextColor(Color.BLUE)
-                .withTextSize(10.0)
-                .withTextOffset(listOf(0.0, 1.2))
+            val options = PointAnnotationOptions().withPoint(point).withIconImage("own-location-blue").withIconSize(1.2).withTextField("$name (You)").withTextColor(Color.BLUE).withTextSize(10.0).withTextOffset(listOf(0.0, 1.2))
             userLocationAnnotation = userAnnotationManager?.create(options)
         } else {
             annotation.point = point
-            annotation.iconImage = iconImage
             userAnnotationManager?.update(annotation)
         }
     }
 
-    private var residentListener: ValueEventListener? = null
-    private var firebaseResidentRef: DatabaseReference? = null
-
     private fun setupFirebaseSync() {
-        if (firebaseDatabase != null) return // Already syncing
-
-        val user = sessionManager.getUser()
-        val role = user?.role?.lowercase() ?: ""
-
-        Log.d("MapboxFragment", "Starting Firebase Sync. Role: $role")
-        val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
-
-        // ADMIN & RESIDENT: See trucks
+        if (firebaseDatabase != null) return
+        val role = sessionManager.getUser()?.role?.lowercase() ?: ""
         if (role == "admin" || role == "resident") {
-            firebaseDatabase = FirebaseDatabase.getInstance(dbUrl).getReference("truck_locations")
+            firebaseDatabase = FirebaseDatabase.getInstance("https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("truck_locations")
             truckListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     lifecycleScope.launch(Dispatchers.Default) {
-                        Log.d("MapboxFragment", "Firebase Truck Data Received. Count: ${snapshot.childrenCount}")
                         val trucks = mutableListOf<com.example.myapplication.models.TruckLocation>()
-                        val newRoutePoints = mutableMapOf<String, MutableList<Point>>()
-
+                        val newRoutePoints = mutableMapOf<String, MutableList<RoutePoint>>()
                         for (truckSnapshot in snapshot.children) {
                             try {
                                 val lat = truckSnapshot.child("latitude").getValue(Double::class.java) ?: continue
                                 val lng = truckSnapshot.child("longitude").getValue(Double::class.java) ?: continue
                                 val truckId = truckSnapshot.child("truckId").getValue(String::class.java) ?: "GT-001"
-
-                                val speed = truckSnapshot.child("speed").getValue(Double::class.java) ?: 0.0
-                                val isFull = truckSnapshot.child("isFull").getValue(Boolean::class.java) ?: false
                                 val driverName = truckSnapshot.child("driverName").getValue(String::class.java) ?: "Unknown Driver"
-
-                                // Fetch and Store Full Route History (Trails)
                                 val historySnapshot = truckSnapshot.child("route_history")
-                                val routePoints = mutableListOf<Point>()
+                                val routePoints = mutableListOf<RoutePoint>()
                                 for (pointSnapshot in historySnapshot.children) {
                                     val pLat = pointSnapshot.child("lat").getValue(Double::class.java) ?: continue
                                     val pLng = pointSnapshot.child("lng").getValue(Double::class.java) ?: continue
-                                    routePoints.add(Point.fromLngLat(pLng, pLat))
+                                    val pSpeed = pointSnapshot.child("speed").getValue(Double::class.java) ?: 0.0
+                                    val pTime = pointSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                                    routePoints.add(RoutePoint(Point.fromLngLat(pLng, pLat), pSpeed, pTime))
                                 }
                                 newRoutePoints[truckId] = routePoints
-
-                                trucks.add(com.example.myapplication.models.TruckLocation(
-                                    id = 0, driverId = 0, truckId = truckId,
-                                    latitude = lat, longitude = lng, speed = speed,
-                                    status = "active", isFull = isFull,
-                                    plateNumber = null, updatedAt = "", driverName = driverName
-                                ))
-                            } catch (e: Exception) {
-                                Log.e("MapboxFragment", "Error parsing truck: ${e.message}")
-                            }
+                                trucks.add(com.example.myapplication.models.TruckLocation(id = 0, driverId = 0, truckId = truckId, latitude = lat, longitude = lng, speed = truckSnapshot.child("speed").getValue(Double::class.java) ?: 0.0, status = "active", isFull = truckSnapshot.child("isFull").getValue(Boolean::class.java) ?: false, plateNumber = null, updatedAt = "", driverName = driverName))
+                            } catch (e: Exception) {}
                         }
-
-                        withContext(Dispatchers.Main) {
+                        withContext(Dispatchers.Main) { 
                             truckRoutePoints.clear()
                             truckRoutePoints.putAll(newRoutePoints)
-                            updateTrucks(trucks)
+                            updateTrucks(trucks) 
+                            trucksUpdatedListener?.onTrucksUpdated(trucks)
                         }
                     }
                 }
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("MapboxFragment", "Firebase Truck Sync Cancelled: ${error.message}")
-                }
+                override fun onCancelled(error: DatabaseError) {}
             }
             firebaseDatabase?.addValueEventListener(truckListener!!)
         }
-
-
     }
 
-    data class ResidentLocation(val id: String, val name: String, val lat: Double, val lng: Double)
+    private var selectedTruckId: String? = null
 
-    private fun updateResidents(residents: List<ResidentLocation>) {
-        if (!isStyleLoaded || residentAnnotationManager == null) return
-
-        val currentIds = residents.map { it.id }.toSet()
-        val idsToRemove = residentAnnotations.keys.filter { it !in currentIds }
-        idsToRemove.forEach { id ->
-            residentAnnotations[id]?.let { residentAnnotationManager?.delete(it) }
-            residentAnnotations.remove(id)
+    fun setSelectedTruck(truckId: String?) {
+        selectedTruckId = truckId
+        // Clear all histories and redraw only selected
+        truckPolylines.keys.forEach { id ->
+            truckPolylines[id]?.forEach { polylineAnnotationManager?.delete(it) }
         }
-
-        residents.forEach { res ->
-            val point = Point.fromLngLat(res.lng, res.lat)
-            val existing = residentAnnotations[res.id]
-            if (existing == null) {
-                val options = PointAnnotationOptions()
-                    .withPoint(point)
-                    .withIconImage("resident-pin-green")
-                    .withIconSize(1.0)
-                    .withTextField("RESIDENT: ${res.name}")
-                    .withTextColor(Color.parseColor("#2E7D32"))
-                    .withTextSize(10.0)
-                    .withTextHaloColor(Color.WHITE)
-                    .withTextHaloWidth(1.0)
-                    .withTextOffset(listOf(0.0, -1.5))
-                residentAnnotationManager?.create(options)?.let {
-                    residentAnnotations[res.id] = it
-                }
-            } else {
-                existing.point = point
-                residentAnnotationManager?.update(existing)
-            }
+        truckPolylines.clear()
+        
+        if (truckId != null) {
+            drawHeatmap(truckId)
         }
     }
 
     fun updateTrucks(trucks: List<com.example.myapplication.models.TruckLocation>, autoCenterOnFirst: Boolean = false) {
-        val role = sessionManager.getUser()?.role?.lowercase() ?: ""
-        if (role == "driver") return // Drivers must NOT see other drivers or trails
-
-        currentTrucks = trucks
-
-        if (!isStyleLoaded || truckAnnotationManager == null) {
-            Log.w("MapboxFragment", "Delaying updateTrucks: Style not loaded yet")
+        if (sessionManager.getUser()?.role?.lowercase() == "driver") return
+        
+        // Optimization: Don't redraw if the data is identical (unless it's the first load)
+        if (currentTrucks == trucks && isStyleLoaded) {
+            // Even if list is same, update the specific selected truck history if it changed
+            selectedTruckId?.let { drawHeatmap(it) }
             return
         }
 
-        Log.d("MapboxFragment", "Updating Map with ${trucks.size} trucks")
-
-        // 1. Remove markers/polylines for trucks no longer present
+        currentTrucks = trucks
+        if (!isStyleLoaded || truckAnnotationManager == null) return
         val currentIds = trucks.map { it.truckId }.toSet()
-        val idsToRemove = truckAnnotations.keys.filter { it !in currentIds }
-        idsToRemove.forEach { id ->
+        
+        truckAnnotations.keys.filter { it !in currentIds }.forEach { id -> 
             truckAnnotations[id]?.let { truckAnnotationManager?.delete(it) }
             truckAnnotations.remove(id)
-            truckPolylines[id]?.let { polylineAnnotationManager?.delete(it) }
+            truckPolylines[id]?.forEach { polylineAnnotationManager?.delete(it) }
             truckPolylines.remove(id)
+            optimizedPolylines[id]?.let { polylineAnnotationManager?.delete(it) }
+            optimizedPolylines.remove(id)
         }
 
-        // 2. Update or Create markers and polylines
         trucks.forEach { truck ->
-            // Only show trucks that are NOT offline
             if (truck.status == "offline") return@forEach
-
             val currentPoint = Point.fromLngLat(truck.longitude, truck.latitude)
-            
-            // Determine marker color and label color based on status
-            val (iconImage, statusColor) = when (truck.status.lowercase()) {
+            val (iconImage, statusColor) = when (truck.status.lowercase()) { 
                 "active" -> "driver-pin-green" to Color.parseColor("#4CAF50")
                 "idle" -> "driver-pin-yellow" to Color.parseColor("#FFC107")
                 "full" -> "driver-pin-red" to Color.parseColor("#F44336")
                 "completed" -> "driver-pin-blue" to Color.parseColor("#2196F3")
-                else -> "driver-pin-red" to Color.RED
+                else -> "driver-pin-red" to Color.RED 
             }
-
-            // Marker Update
+            
             val existingAnnotation = truckAnnotations[truck.truckId]
             if (existingAnnotation == null) {
                 val truckOptions = PointAnnotationOptions()
@@ -393,136 +294,195 @@ class MapboxFragment : Fragment() {
                     .withTextHaloColor(Color.WHITE)
                     .withTextHaloWidth(1.5)
                     .withTextOffset(listOf(0.0, -1.5))
-                truckAnnotationManager?.create(truckOptions)?.let {
-                    truckAnnotations[truck.truckId] = it
-                }
-            } else {
+                truckAnnotations[truck.truckId] = truckAnnotationManager!!.create(truckOptions)
+            } else { 
                 existingAnnotation.point = currentPoint
                 existingAnnotation.iconImage = iconImage
                 existingAnnotation.textField = "${truck.driverName ?: "Driver"}\n(${truck.status.uppercase()})"
                 existingAnnotation.textColorInt = statusColor
-                truckAnnotationManager?.update(existingAnnotation)
+                truckAnnotationManager?.update(existingAnnotation) 
             }
 
-            // Polyline (Trail) Update - use status color
-            val points = truckRoutePoints[truck.truckId] ?: mutableListOf()
-            if (points.size >= 2) {
-                val existingPolyline = truckPolylines[truck.truckId]
-                val hexColor = String.format("#%06X", (0xFFFFFF and statusColor))
-                if (existingPolyline == null) {
-                    val lineOptions = PolylineAnnotationOptions()
-                        .withPoints(points)
-                        .withLineColor(hexColor)
-                        .withLineWidth(4.0)
-                        .withLineJoin(LineJoin.ROUND)
-                        .withLineOpacity(0.6)
-                    polylineAnnotationManager?.create(lineOptions)?.let {
-                        truckPolylines[truck.truckId] = it
-                    }
-                } else {
-                    existingPolyline.points = points
-                    existingPolyline.lineColorString = hexColor
-                    polylineAnnotationManager?.update(existingPolyline)
-                }
+            // Only draw history if this is the selected truck
+            if (truck.truckId == selectedTruckId) {
+                drawHeatmap(truck.truckId)
             }
-
-            checkGeofenceNotifications(truck)
         }
     }
 
-    private fun checkGeofenceNotifications(truck: com.example.myapplication.models.TruckLocation) {
-        if (hasCollectedFromAtLeastOneZone && truck.isFull) return
+    private fun drawHeatmap(truckId: String) {
+        val points = truckRoutePoints[truckId] ?: return
+        if (points.size < 2) return
 
-        val truckLoc = Location("").apply {
-            latitude = truck.latitude
-            longitude = truck.longitude
+        // Clear existing polylines for this truck
+        truckPolylines[truckId]?.forEach { polylineAnnotationManager?.delete(it) }
+        val newPolylines = mutableListOf<PolylineAnnotation>()
+
+        // 🛡️ REFINEMENT: Remove duplicate points in history to prevent line artifacts
+        val filteredPoints = mutableListOf<RoutePoint>()
+        if (points.isNotEmpty()) {
+            filteredPoints.add(points[0])
+            for (i in 1 until points.size) {
+                val dist = FloatArray(1)
+                Location.distanceBetween(
+                    points[i].point.latitude(), points[i].point.longitude(),
+                    points[i-1].point.latitude(), points[i-1].point.longitude(),
+                    dist
+                )
+                // Only keep points that are at least 1.5 meters apart for drawing
+                if (dist[0] > 1.5) {
+                    filteredPoints.add(points[i])
+                }
+            }
         }
 
-        var currentlyInside: String? = null
-        for (zone in purokZones) {
-            val zoneLoc = Location("").apply {
-                latitude = zone.latitude
-                longitude = zone.longitude
-            }
-            val distance = truckLoc.distanceTo(zoneLoc)
+        if (filteredPoints.size < 2) return
 
-            if (distance <= zone.radiusMeters) {
-                currentlyInside = zone.name
-                if (zone.name != lastInsidePurok && !notifiedZones.contains(zone.name)) {
-                    val driverName = truck.driverName ?: "Driver"
-                    val message = "🚛 Garbage Truck Alert: Driver $driverName is now entering ${zone.name}. Please prepare your trash!"
-                    activity?.let { CustomNotification.showTopNotification(it, message, false) }
-                    sendSMSAlert(message)
-                    notifiedZones.add(zone.name)
-                    hasCollectedFromAtLeastOneZone = true
+        // Split points into segments based on speed for heatmap
+        var currentSegment = mutableListOf<Point>()
+        var currentType = getSpeedType(filteredPoints[0].speed)
+
+        for (i in filteredPoints.indices) {
+            val type = getSpeedType(filteredPoints[i].speed)
+            if (type != currentType && currentSegment.size >= 2) {
+                val polyline = drawSegment(currentSegment, currentType)
+                if (polyline != null) newPolylines.add(polyline)
+                currentSegment = mutableListOf(filteredPoints[i-1].point, filteredPoints[i].point)
+                currentType = type
+            } else {
+                currentSegment.add(filteredPoints[i].point)
+            }
+        }
+        
+        if (currentSegment.size >= 2) {
+            val polyline = drawSegment(currentSegment, currentType)
+            if (polyline != null) newPolylines.add(polyline)
+        }
+
+        truckPolylines[truckId] = newPolylines
+    }
+
+    private fun getSpeedType(speed: Double): String {
+        return when {
+            speed < 5.0 -> "stopped"
+            speed < 15.0 -> "slow"
+            else -> "moving"
+        }
+    }
+
+    private fun drawSegment(points: List<Point>, type: String): PolylineAnnotation? {
+        val color = when (type) {
+            "stopped" -> "#F44336" // Red
+            "slow" -> "#FFC107"    // Yellow
+            else -> "#4CAF50"      // Green
+        }
+        
+        val options = PolylineAnnotationOptions()
+            .withPoints(points)
+            .withLineColor(color)
+            .withLineWidth(4.0)
+            .withLineOpacity(0.7)
+            .withLineJoin(LineJoin.ROUND)
+            
+        return polylineAnnotationManager?.create(options)
+    }
+
+    fun toggleOptimization(truckId: String, visible: Boolean) {
+        if (!visible) {
+            optimizedPolylines[truckId]?.let { polylineAnnotationManager?.delete(it) }
+            optimizedPolylines.remove(truckId)
+            return
+        }
+
+        // Simulate optimization by connecting all purok centers in order
+        val optimizedPoints = purokZones.map { Point.fromLngLat(it.longitude, it.latitude) }
+        val options = PolylineAnnotationOptions()
+            .withPoints(optimizedPoints)
+            .withLineColor("#2196F3")
+            .withLineWidth(6.0) // Thicker to distinguish
+            .withLineOpacity(0.4)
+            .withLineJoin(LineJoin.ROUND)
+            
+        optimizedPolylines[truckId] = polylineAnnotationManager!!.create(options)
+    }
+
+    fun getAnalytics(truckId: String): AnalyticsData {
+        val points = truckRoutePoints[truckId] ?: return AnalyticsData(0.0, 0.0, 0)
+        var totalDist = 0.0
+        var stopCount = 0
+        
+        // Intelligent Stop Detection Logic
+        // A 'Stop' is defined as a cluster of points within 10 meters 
+        // that spans more than 45 seconds of duration.
+        var potentialStopStartTime: Long = 0
+        var isCurrentlyStopped = false
+
+        for (i in 0 until points.size - 1) {
+            val p1 = points[i]
+            val p2 = points[i+1]
+            
+            val results = FloatArray(1)
+            Location.distanceBetween(p1.point.latitude(), p1.point.longitude(), p2.point.latitude(), p2.point.longitude(), results)
+            totalDist += results[0]
+            
+            // If speed is very low (< 1.5 km/h)
+            if (p1.speed < 1.5) {
+                if (potentialStopStartTime == 0L) {
+                    potentialStopStartTime = p1.timestamp
+                } else {
+                    val duration = p2.timestamp - potentialStopStartTime
+                    // If they stay in this low-speed state for > 45 seconds, count as a collection stop
+                    if (duration > 45000 && !isCurrentlyStopped) {
+                        stopCount++
+                        isCurrentlyStopped = true
+                    }
                 }
             } else {
-                if (truck.speed > 1.0) {
-                    val etaSeconds = distance / (truck.speed / 3.6)
-                    if (etaSeconds <= 900 && !etaNotifiedZones.contains(zone.name)) {
-                        val driverName = truck.driverName ?: "Driver"
-                        val message = "⏳ Garbage Truck Alert: Driver $driverName is estimated to arrive in ${zone.name} in about 15 minutes."
-                        activity?.let { CustomNotification.showTopNotification(it, message, false) }
-                        sendSMSAlert(message)
-                        etaNotifiedZones.add(zone.name)
-                    }
-                }
+                // Moving again
+                potentialStopStartTime = 0L
+                isCurrentlyStopped = false
             }
         }
-        lastInsidePurok = currentlyInside
+        
+        val km = totalDist / 1000.0
+        val fuel = km / 5.0 // Est 5km/L for heavy vehicle
+        
+        return AnalyticsData(km, fuel, stopCount)
     }
 
-    private fun sendSMSAlert(message: String) {
-        Log.d("SMS_ALERT", "Sending SMS: $message")
+    fun getCoverage(truckId: String): List<CoverageItem> {
+        val points = truckRoutePoints[truckId] ?: return purokZones.map { CoverageItem(it.name, false, null) }
+        
+        return purokZones.map { zone ->
+            var visited = false
+            var firstVisitedTime: String? = null
+            
+            for (p in points) {
+                val results = FloatArray(1)
+                Location.distanceBetween(p.point.latitude(), p.point.longitude(), zone.latitude, zone.longitude, results)
+                if (results[0] <= zone.radiusMeters) {
+                    visited = true
+                    if (p.timestamp > 0) {
+                        val sdf = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                        firstVisitedTime = sdf.format(java.util.Date(p.timestamp))
+                    }
+                    break
+                }
+            }
+            CoverageItem(zone.name, visited, firstVisitedTime)
+        }
     }
 
-    override fun onStart() {
-        super.onStart()
-        mapView?.onStart()
+    private fun logNotificationToFirebase(truckId: String, zoneName: String, type: String, message: String) {
+        val ref = FirebaseDatabase.getInstance("https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("notification_logs")
+        val timestamp = System.currentTimeMillis(); val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
+        ref.push().setValue(mapOf("truckId" to truckId, "zoneName" to zoneName, "type" to type, "message" to message, "timestamp" to timestamp, "date" to date))
     }
 
-    override fun onResume() {
-        super.onResume()
-        // ✅ SAME EXACT COORDINATES HERE — ALWAYS CENTERED
-        val balintawakPoint = Point.fromLngLat(
-            121.158888,
-            13.955805
-        )
-        val cameraOptions = CameraOptions.Builder()
-            .center(balintawakPoint)
-            .zoom(13.0)
-            .pitch(0.0)
-            .bearing(0.0)
-            .build()
-
-        mapView?.mapboxMap?.setCamera(cameraOptions)
-
-        mapView?.postDelayed({
-            mapView?.mapboxMap?.setCamera(cameraOptions)
-        }, 500)
-    }
-
-    override fun onPause() {
-        super.onPause()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        mapView?.onStop()
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView?.onLowMemory()
-    }
-
-    override fun onDestroyView() {
-        truckListener?.let { firebaseDatabase?.removeEventListener(it) }
-        residentListener?.let { firebaseResidentRef?.removeEventListener(it) }
-        mapView?.onDestroy()
-        mapView = null
-        super.onDestroyView()
-    }
+    override fun onStart() { super.onStart(); mapView?.onStart() }
+    override fun onResume() { super.onResume(); val balintawakPoint = Point.fromLngLat(121.158888, 13.955805); val cameraOptions = CameraOptions.Builder().center(balintawakPoint).zoom(13.0).pitch(0.0).bearing(0.0).build(); mapView?.mapboxMap?.setCamera(cameraOptions) }
+    override fun onStop() { super.onStop(); mapView?.onStop() }
+    override fun onDestroyView() { truckListener?.let { firebaseDatabase?.removeEventListener(it) }; mapView?.onDestroy(); mapView = null; super.onDestroyView() }
 
     fun clearMap() {
         truckAnnotationManager?.deleteAll()
@@ -533,9 +493,5 @@ class MapboxFragment : Fragment() {
         residentAnnotations.clear()
         truckPolylines.clear()
         truckRoutePoints.clear()
-        notifiedZones.clear()
-        etaNotifiedZones.clear()
-        lastInsidePurok = null
-        hasCollectedFromAtLeastOneZone = false
     }
 }

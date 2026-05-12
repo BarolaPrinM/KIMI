@@ -102,6 +102,19 @@ class DriverRegisterActivity : AppCompatActivity() {
 
         database.child(requestId).setValue(requestData)
             .addOnSuccessListener {
+                // Send system notification to Admin
+                val notification = com.example.myapplication.models.SystemNotification(
+                    type = "REGISTRATION",
+                    title = "New Driver Registration",
+                    message = "$fullName is requesting registration as a driver.",
+                    timestamp = System.currentTimeMillis(),
+                    isRead = false,
+                    relatedId = requestId
+                )
+                val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+                com.google.firebase.database.FirebaseDatabase.getInstance(dbUrl)
+                    .getReference("notifications").push().setValue(notification)
+
                 showLoading(false)
                 CustomNotification.showTopNotification(this, "Driver Application Sent! Wait for Admin Approval.", false)
                 Handler(Looper.getMainLooper()).postDelayed({ finish() }, 2000)

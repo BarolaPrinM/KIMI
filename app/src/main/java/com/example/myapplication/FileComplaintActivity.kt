@@ -63,6 +63,20 @@ class FileComplaintActivity : AppCompatActivity() {
                     btnSubmit.text = "Submit Complaint"
                     
                     if (response.isSuccessful && response.body()?.success == true) {
+                        // Notify Admin
+                        val user = sessionManager.getUser()
+                        val notification = com.example.myapplication.models.SystemNotification(
+                            type = "COMPLAINT",
+                            title = "New Complaint",
+                            message = "${user?.name ?: "Resident"} filed a new complaint: $category",
+                            timestamp = System.currentTimeMillis(),
+                            isRead = false,
+                            relatedId = ""
+                        )
+                        val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+                        com.google.firebase.database.FirebaseDatabase.getInstance(dbUrl)
+                            .getReference("notifications").push().setValue(notification)
+
                         CustomNotification.showTopNotification(this@FileComplaintActivity, "Complaint filed successfully", false)
                         android.os.Handler(mainLooper).postDelayed({ finish() }, 1500)
                     } else {

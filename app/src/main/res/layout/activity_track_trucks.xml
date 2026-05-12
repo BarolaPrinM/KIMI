@@ -80,7 +80,9 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_bottom_sheet"
         android:elevation="8dp"
-        app:behavior_peekHeight="200dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        app:behavior_peekHeight="240dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
         <LinearLayout
@@ -102,68 +104,102 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="20dp"
-                android:text="Available Trucks"
+                android:layout_marginTop="24dp"
+                android:text="Active Fleet Status"
                 android:textStyle="bold"
-                android:textSize="16sp"
-                android:textColor="#1A1A1A" />
+                android:textSize="20sp"
+                android:textColor="#1A1A1A"
+                android:letterSpacing="-0.02" />
 
             <LinearLayout
                 android:id="@+id/truck_list_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="24dp">
                 <!-- Dynamically populated truck cards go here -->
             </LinearLayout>
 
-            <!-- Information Box at Bottom -->
+            <!-- Coverage Checklist Section -->
+            <LinearLayout
+                android:id="@+id/coverage_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:paddingBottom="20dp">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:background="#EEEEEE" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="20dp"
+                    android:text="Purok Coverage Progress"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#1A1A1A" />
+
+                <LinearLayout
+                    android:id="@+id/purok_checklist_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="20dp"
+                    android:paddingTop="12dp">
+                    <!-- Dynamically populated purok check items -->
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Information Box (Removed SMS references) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="10dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="#F5F5F5">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#F0F0F0"
+                app:cardBackgroundColor="#F9F9F9">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Real-time Tracking"
+                        android:text="Fleet Management Guide"
                         android:textStyle="bold"
-                        android:textColor="#1A1A1A" />
+                        android:textColor="#1A1A1A"
+                        android:textSize="14sp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="• Location updates every 5 seconds"
+                        android:layout_marginTop="12dp"
+                        android:text="• Tap 'History' to view detailed audit trails"
                         android:textSize="12sp"
                         android:textColor="#666666" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="• Accurate GPS positioning (±5 meters)"
+                        android:layout_marginTop="6dp"
+                        android:text="• Use 'Compare Path' for AI-optimized routes"
                         android:textSize="12sp"
                         android:textColor="#666666" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="• SMS notifications when truck is nearby"
-                        android:textSize="12sp"
-                        android:textColor="#666666" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="• View estimated arrival times"
+                        android:layout_marginTop="6dp"
+                        android:text="• Real-time heatmaps indicate collection speed"
                         android:textSize="12sp"
                         android:textColor="#666666" />
                 </LinearLayout>

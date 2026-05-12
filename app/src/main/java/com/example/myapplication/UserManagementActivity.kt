@@ -13,7 +13,14 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import androidx.activity.enableEdgeToEdge
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.textfield.TextInputEditText
+import java.util.*
+import java.text.SimpleDateFormat
+import androidx.core.util.Pair
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -37,6 +44,17 @@ class UserManagementActivity : AppCompatActivity() {
     private lateinit var tvEmptyState: TextView
     private lateinit var tabLayout: TabLayout
     private lateinit var pbLoading: ProgressBar
+
+    private lateinit var btnDatePicker: View
+    private lateinit var tvDateRange: TextView
+    private lateinit var layoutPurokFilter: View
+    private lateinit var actvPurokFilter: AutoCompleteTextView
+    private lateinit var switchShowArchived: com.google.android.material.switchmaterial.SwitchMaterial
+
+    private var startDate: Long? = null
+    private var endDate: Long? = null
+    private var selectedPurokFilter = "All Puroks"
+    private var isShowArchivedOnly = false
 
     private var allResidents = mutableListOf<UserData>()
     private var allDrivers = mutableListOf<UserData>()
@@ -83,6 +101,103 @@ class UserManagementActivity : AppCompatActivity() {
         tvEmptyState = findViewById(R.id.tv_empty_state)
         tabLayout = findViewById(R.id.tab_layout)
         pbLoading = findViewById(R.id.pb_loading)
+
+        btnDatePicker = findViewById(R.id.btn_date_picker)
+        tvDateRange = findViewById(R.id.tv_date_range)
+        layoutPurokFilter = findViewById(R.id.layout_purok_filter)
+        actvPurokFilter = findViewById(R.id.actv_purok_filter)
+        switchShowArchived = findViewById(R.id.switch_show_archived)
+
+        setupFilters()
+    }
+
+    private fun setupFilters() {
+        btnDatePicker.setOnClickListener {
+            showDateSelectionDialog()
+        }
+
+        layoutPurokFilter.setOnClickListener {
+            actvPurokFilter.showDropDown()
+        }
+
+        switchShowArchived.setOnCheckedChangeListener { _, isChecked ->
+            isShowArchivedOnly = isChecked
+            filterList(etSearch.text.toString())
+        }
+        
+        setupPurokDropdown()
+    }
+
+    private fun showDateSelectionDialog() {
+        val options = arrayOf("Select Single Date", "Select Date Range", "Clear Filter")
+        AlertDialog.Builder(this)
+            .setTitle("Date Filter Type")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showSingleDatePicker()
+                    1 -> showDateRangePicker()
+                    2 -> {
+                        startDate = null
+                        endDate = null
+                        tvDateRange.text = "All Time"
+                        filterList(etSearch.text.toString())
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun showSingleDatePicker() {
+        val builder = MaterialDatePicker.Builder.datePicker()
+        builder.setTitleText("Select Date")
+        val picker = builder.build()
+        picker.addOnPositiveButtonClickListener { selection ->
+            startDate = selection
+            // For single date, set end date to end of that same day
+            endDate = selection
+            
+            val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            tvDateRange.text = sdf.format(Date(selection))
+            
+            filterList(etSearch.text.toString())
+        }
+        picker.show(supportFragmentManager, "single_date_picker")
+    }
+
+    private fun showDateRangePicker() {
+        val builder = MaterialDatePicker.Builder.dateRangePicker()
+        builder.setTitleText("Select Date Range")
+        
+        val picker = builder.build()
+        picker.addOnPositiveButtonClickListener { range ->
+            startDate = range.first
+            endDate = range.second
+            
+            val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            val startStr = sdf.format(Date(startDate!!))
+            val endStr = sdf.format(Date(endDate!!))
+            tvDateRange.text = "$startStr - $endStr"
+            
+            filterList(etSearch.text.toString())
+        }
+        
+        picker.show(supportFragmentManager, "date_range_picker")
+    }
+
+    private fun setupPurokDropdown() {
+        val puroks = arrayOf(
+            "All Puroks", "Purok 2", "Purok 3", "Purok 4", "Dos Riles", 
+            "Sentro", "San Isidro", "Paraiso", "Riverside", "Kalaw Street", 
+            "Home Subdivision", "Tanco Road / Ayala Highway", "Brixton Area"
+        )
+        
+        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, puroks)
+        actvPurokFilter.setAdapter(adapter)
+        
+        actvPurokFilter.setOnItemClickListener { _, _, position, _ ->
+            selectedPurokFilter = puroks[position]
+            filterList(etSearch.text.toString())
+        }
     }
 
     private fun fetchUsers() {
@@ -181,28 +296,50 @@ class UserManagementActivity : AppCompatActivity() {
             else -> allResidents
         }
 
-        currentFilteredList = if (query.isEmpty()) {
-            sourceList.toMutableList()
-        } else {
-            sourceList.filter { 
-                it.name.contains(query, ignoreCase = true) || 
-                it.email.contains(query, ignoreCase = true) ||
-                (it.phone?.contains(query) ?: false)
-            }.toMutableList()
-        }
+        currentFilteredList = sourceList.filter { user ->
+            // Search filter
+            val matchesSearch = query.isEmpty() || 
+                    user.name.contains(query, ignoreCase = true) || 
+                    user.email.contains(query, ignoreCase = true) ||
+                    (user.phone?.contains(query) ?: false)
+
+            // Archive filter
+            val matchesArchive = if (currentTab == 2) true else {
+                if (isShowArchivedOnly) user.isArchived == 1 else user.isArchived == 0
+            }
+
+            // Purok filter (only for Residents tab)
+            val matchesPurok = if (currentTab == 0 && selectedPurokFilter != "All Puroks") {
+                user.purok == selectedPurokFilter
+            } else true
+
+            // Date filter
+            val matchesDate = if (startDate != null && endDate != null) {
+                isWithinRange(user.createdAt, startDate!!, endDate!!)
+            } else true
+
+            matchesSearch && matchesArchive && matchesPurok && matchesDate
+        }.toMutableList()
 
         displayUsers(currentFilteredList)
     }
 
-    private fun updateList(tabIndex: Int) {
-        val listToShow = when (tabIndex) {
-            0 -> allResidents
-            1 -> allDrivers
-            2 -> allRequests
-            else -> allResidents
+    private fun isWithinRange(createdAt: String?, start: Long, end: Long): Boolean {
+        if (createdAt == null) return false
+        try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val date = sdf.parse(createdAt) ?: return false
+            // MaterialDatePicker range is start of start day to start of end day.
+            // We adjust end to include the full last day.
+            val endOfDay = end + (24 * 60 * 60 * 1000) - 1
+            return date.time in start..endOfDay
+        } catch (e: Exception) {
+            return false
         }
-        currentFilteredList = listToShow.toMutableList()
-        displayUsers(currentFilteredList)
+    }
+
+    private fun updateList(tabIndex: Int) {
+        filterList(etSearch.text.toString())
     }
 
     private fun displayUsers(users: List<UserData>) {
@@ -220,12 +357,24 @@ class UserManagementActivity : AppCompatActivity() {
                 view.findViewById<TextView>(R.id.tv_user_name).text = user.name
                 view.findViewById<TextView>(R.id.tv_user_email).text = user.email
                 
-                val detailText = when (user.role.lowercase()) {
+                val userDetailText = when (user.role.lowercase()) {
+                    "resident" -> user.purok ?: "No Purok"
                     "driver" -> "License: ${user.licenseNumber ?: "N/A"} | Truck: ${user.preferredTruck ?: "N/A"}"
-                    "admin" -> "System Administrator"
-                    else -> "Address: ${user.purok ?: "N/A"}, Balintawak"
+                    else -> user.role
                 }
-                view.findViewById<TextView>(R.id.tv_user_detail).text = detailText
+                view.findViewById<TextView>(R.id.tv_user_detail).text = userDetailText
+
+                val btnArchive = view.findViewById<ImageButton>(R.id.btn_archive)
+
+                if (currentTab == 2) {
+                    btnArchive.visibility = View.GONE
+                } else {
+                    btnArchive.visibility = View.VISIBLE
+                    btnArchive.setImageResource(if (user.isArchived == 1) android.R.drawable.ic_menu_revert else android.R.drawable.ic_menu_save)
+                    btnArchive.setOnClickListener {
+                        toggleArchive(user)
+                    }
+                }
                 
                 val indicator = view.findViewById<View>(R.id.view_role_indicator)
                 when (user.role.lowercase()) {
@@ -235,11 +384,11 @@ class UserManagementActivity : AppCompatActivity() {
                 }
 
                 val layoutActions = view.findViewById<LinearLayout>(R.id.layout_actions)
-                val ivNext = view.findViewById<View>(R.id.iv_next)
+                val ivNextView = view.findViewById<View>(R.id.iv_next)
 
                 if (currentTab == 2) {
                     layoutActions.visibility = View.VISIBLE
-                    ivNext.visibility = View.GONE
+                    ivNextView.visibility = View.GONE
                     
                     view.findViewById<Button>(R.id.btn_approve).setOnClickListener {
                         showConfirmDialog(user, true)
@@ -249,7 +398,7 @@ class UserManagementActivity : AppCompatActivity() {
                     }
                 } else {
                     layoutActions.visibility = View.GONE
-                    ivNext.visibility = View.VISIBLE
+                    ivNextView.visibility = View.VISIBLE
                     view.setOnClickListener {
                         // Details logic for residents/drivers
                     }
@@ -307,6 +456,37 @@ class UserManagementActivity : AppCompatActivity() {
         alertDialog.show()
     }
 
+    private fun toggleArchive(user: UserData) {
+        val newStatus = if (user.isArchived == 1) 0 else 1
+        val action = if (newStatus == 1) "archive" else "unarchive"
+        
+        AlertDialog.Builder(this)
+            .setTitle("Confirm $action")
+            .setMessage("Are you sure you want to $action this ${user.role}?")
+            .setPositiveButton("Yes") { _, _ ->
+                pbLoading.visibility = View.VISIBLE
+                val request = ArchiveRequest(user.userId, user.role, newStatus)
+                RetrofitClient.instance.archiveUser(request).enqueue(object : Callback<ApiResponse> {
+                    override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
+                        if (response.isSuccessful && response.body()?.success == true) {
+                            Toast.makeText(this@UserManagementActivity, response.body()?.message, Toast.LENGTH_SHORT).show()
+                            fetchUsers()
+                        } else {
+                            pbLoading.visibility = View.GONE
+                            Toast.makeText(this@UserManagementActivity, "Action failed", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
+                        pbLoading.visibility = View.GONE
+                        Toast.makeText(this@UserManagementActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
     private fun approveRequest(user: UserData) {
         val registerRequest = RegisterRequest(
             username = user.username,
@@ -358,16 +538,11 @@ class UserManagementActivity : AppCompatActivity() {
 
     private fun setupBottomNavigation() {
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav.selectedItemId = R.id.nav_users
+        bottomNav.selectedItemId = R.id.nav_monitor
 
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_monitor -> {
-                    startActivity(Intent(this, AdminDashboardActivity::class.java))
-                    overridePendingTransition(0, 0)
-                    finish()
-                    true
-                }
+                R.id.nav_monitor -> true
                 R.id.nav_track -> {
                     startActivity(Intent(this, TrackTrucksActivity::class.java))
                     overridePendingTransition(0, 0)
@@ -386,7 +561,6 @@ class UserManagementActivity : AppCompatActivity() {
                     finish()
                     true
                 }
-                R.id.nav_users -> true
                 R.id.nav_settings -> {
                     startActivity(Intent(this, AdminSettingsActivity::class.java))
                     overridePendingTransition(0, 0)

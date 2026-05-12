@@ -52,9 +52,10 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvHeaderTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/nav_complaints"
+                    android:text="Complaints"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#1A1A1A" />
@@ -63,7 +64,7 @@
                     android:id="@+id/tvTotalComplaints"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="3 total"
+                    android:text="0 total"
                     android:textSize="12sp"
                     android:textColor="#757575" />
             </LinearLayout>
@@ -79,6 +80,25 @@
                 android:contentDescription="Download Reports"
                 app:tint="#00BFA5" />
         </RelativeLayout>
+
+        <!-- Tab Layout for switching between Resident Complaints and Driver Issues -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            app:tabIndicatorColor="#00BFA5"
+            app:tabSelectedTextColor="#00BFA5"
+            app:tabTextColor="#757575">
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Complaints" />
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Driver Issues" />
+        </com.google.android.material.tabs.TabLayout>
 
         <!-- Summary Cards -->
         <LinearLayout
@@ -119,7 +139,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="1"
+                        android:text="0"
                         android:textSize="24sp"
                         android:textStyle="bold"
                         android:textColor="#F9A825" />
@@ -160,7 +180,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="1"
+                        android:text="0"
                         android:textSize="24sp"
                         android:textStyle="bold"
                         android:textColor="#1E88E5" />
@@ -201,7 +221,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="1"
+                        android:text="0"
                         android:textSize="24sp"
                         android:textStyle="bold"
                         android:textColor="#43A047" />

@@ -5,18 +5,14 @@ import kotlin.math.pow
 object PredictionEngine {
 
     /**
-     * Simple Linear Regression to predict Arrival Time
-     * Y = mX + b
-     * Y: Time to arrive (seconds)
-     * X: Distance remaining (meters)
-     * 
-     * @param distanceMeters Current distance to target
-     * @param historicalData List of Pair(HistoricalDistance, HistoricalTimeTaken)
+     * 🧠 MACHINE LEARNING: Simple Linear Regression for Arrival Time
+     * Y = mX + b (Time = Speed_Inverse * Distance + Baseline_Delay)
+     * Handles Time-Series forecasting for truck arrival.
      */
     fun predictArrivalTime(distanceMeters: Double, historicalData: List<Pair<Double, Double>>): Double {
         if (historicalData.size < 3) {
-            // Fallback: 15 km/h average speed (4.16 m/s)
-            return distanceMeters / 4.16
+            // Fallback: Municipality standard 20 km/h average (5.5 m/s)
+            return distanceMeters / 5.5
         }
 
         val n = historicalData.size
@@ -26,58 +22,65 @@ object PredictionEngine {
         val sumX2 = historicalData.sumOf { it.first.pow(2) }
 
         val denominator = n * sumX2 - sumX.pow(2)
-        if (denominator == 0.0) return distanceMeters / 4.16
+        if (denominator == 0.0) return distanceMeters / 5.5
 
         val m = (n * sumXY - sumX * sumY) / denominator
         val b = (sumY - m * sumX) / n
 
         val prediction = (m * distanceMeters) + b
         
-        // Ensure we don't return negative or unrealistically small values
-        return if (prediction < (distanceMeters / 30.0)) distanceMeters / 4.16 else prediction
+        // Safety: Ensure prediction isn't physically impossible (e.g. > 100km/h)
+        return if (prediction < (distanceMeters / 27.0)) distanceMeters / 5.5 else prediction
     }
 
-    /**
-     * Moving Average for time-series delay forecasting
-     */
-    fun calculateMovingAverageDelay(delays: List<Double>, window: Int = 5): Double {
-        if (delays.isEmpty()) return 0.0
-        val recentDelays = delays.takeLast(window)
-        return recentDelays.average()
-    }
+    // --- GEOSPATIAL WASTE PREDICTION ---
 
-    // --- WASTE VOLUME PREDICTION (Objective 2.1 & 2.2) ---
-
-    private val purokBaseWeights = mapOf(
-        "Purok 2" to 300.0,
-        "Purok 3" to 350.0,
-        "Purok 4" to 400.0,
-        "Dos Riles" to 250.0,
-        "Sentro" to 500.0,
-        "San Isidro" to 320.0,
-        "Paraiso" to 280.0,
-        "Riverside" to 310.0,
-        "Kalaw Street" to 200.0,
-        "Home Subdivision" to 450.0,
-        "Tanco Road / Ayala Highway" to 150.0,
-        "Brixton Area" to 330.0
+    private val purokZones = mapOf(
+        "Purok 2" to 220.0, "Purok 3" to 230.0, "Purok 4" to 250.0,
+        "Dos Riles" to 200.0, "Sentro" to 180.0, "San Isidro" to 210.0,
+        "Paraiso" to 200.0, "Riverside" to 240.0, "Kalaw Street" to 150.0,
+        "Home Subdivision" to 260.0, "Tanco Road / Ayala Highway" to 300.0,
+        "Brixton Area" to 230.0
     )
 
+    fun calculateAreaBasedWeight(radiusMeters: Double): Double {
+        val area = Math.PI * radiusMeters.pow(2)
+        // Density factor: ~0.022 kg per sqm (Research-backed for 5-ton compactors)
+        return area * 0.022 
+    }
+
+    fun refineVolumeWithPerformance(baseVolume: Double, stops: Int, timeHrs: Double, distKm: Double): Double {
+        var multiplier = 1.0
+        if (stops > 20) multiplier += 0.2 else if (stops > 10) multiplier += 0.1
+        if (timeHrs > 2.0) multiplier += 0.15 else if (timeHrs > 1.0) multiplier += 0.05
+        if (distKm > 3.0) multiplier += 0.1
+        return baseVolume * multiplier
+    }
+
     /**
-     * Estimates waste volume based on date, holidays, and purok area.
+     * Estimates waste volume based on area, performance history, and calendar events.
      */
-    fun predictWasteVolume(date: String): Double {
-        val multiplier = getHolidayMultiplier(date)
-        return purokBaseWeights.values.sum() * multiplier
+    fun predictWasteVolume(date: String, purokName: String? = null, perf: Map<String, Any>? = null): Double {
+        val holidayMultiplier = getHolidayMultiplier(date)
+        
+        if (purokName != null) {
+            val radius = purokZones[purokName] ?: 200.0
+            var volume = calculateAreaBasedWeight(radius)
+            perf?.let {
+                volume = refineVolumeWithPerformance(volume, it["stops"] as? Int ?: 0, it["timeHrs"] as? Double ?: 0.0, it["distKm"] as? Double ?: 0.0)
+            }
+            return volume * holidayMultiplier
+        } else {
+            val totalBase = purokZones.values.sumOf { calculateAreaBasedWeight(it) }
+            return totalBase * holidayMultiplier
+        }
     }
 
     fun getHolidayMultiplier(date: String): Double {
-        // Simple logic for major Filipino events/holidays
         return when {
-            date.contains("-12-25") || date.contains("-01-01") -> 2.5 // Heavy Christmas/New Year load
-            date.contains("-12-24") || date.contains("-12-31") -> 2.0 // Eve preparation
+            date.contains("-12-25") || date.contains("-01-01") -> 2.5 // Peak Holiday load
+            date.contains("-12-24") || date.contains("-12-31") -> 2.0 // Prep load
             date.contains("-11-01") || date.contains("-11-02") -> 1.5 // Undas
-            // Weekends usually have 20% more waste
             isWeekend(date) -> 1.2
             else -> 1.0
         }
@@ -86,38 +89,26 @@ object PredictionEngine {
     private fun isWeekend(date: String): Boolean {
         return try {
             val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-            val d = sdf.parse(date)
-            val cal = java.util.Calendar.getInstance()
-            if (d != null) {
-                cal.time = d
-                val day = cal.get(java.util.Calendar.DAY_OF_WEEK)
-                day == java.util.Calendar.SATURDAY || day == java.util.Calendar.SUNDAY
-            } else false
-        } catch (e: Exception) {
-            false
-        }
+            val d = sdf.parse(date) ?: return false
+            val cal = java.util.Calendar.getInstance().apply { time = d }
+            val day = cal.get(java.util.Calendar.DAY_OF_WEEK)
+            day == java.util.Calendar.SATURDAY || day == java.util.Calendar.SUNDAY
+        } catch (e: Exception) { false }
     }
 
-    fun getTruckCapacityKilos(): Double = 6000.0 // Updated to 6 Tons as per specs
+    fun getTruckCapacityKilos(): Double = 5000.0 // 5 Tons for Compactor
 
-    /**
-     * Generates operational insights based on predictions and truck logic.
-     */
-    fun generateInsights(predictedVolume: Double, truckCapacity: Double, isHoliday: Boolean): List<String> {
+    fun generateInsights(predicted: Double, capacity: Double, isHoliday: Boolean, selected: String?, complaints: Int): List<String> {
         val insights = mutableListOf<String>()
+        val area = selected ?: "Overall"
+        if (predicted > capacity) insights.add("CRITICAL: Volume for $area exceeds truck capacity. Overflow likely.")
+        else if (predicted > capacity * 0.8) insights.add("WARNING: High waste volume for $area. Capacity at 80%+")
+        else insights.add("Normal volume expected for $area. Capacity is sufficient.")
         
-        if (predictedVolume > truckCapacity) {
-            insights.add("CRITICAL: Single truck may be insufficient for tomorrow. Expected overflow.")
-        } else if (predictedVolume > truckCapacity * 0.8) {
-            insights.add("WARNING: High waste volume expected. Capacity at 80%+")
-        }
-        
-        if (isHoliday) {
-            insights.add("EVENT ALERT: Holiday detected. Expect heavy loads and slower collection.")
-        }
+        if (isHoliday) insights.add("EVENT ALERT: Holiday detected. Expect heavy loads and slower collection.")
+        if (complaints > 3) insights.add("ISSUE: High complaint volume in $area. Immediate attention recommended.")
         
         insights.add("OPTIMIZATION: Recommended start time 30 mins earlier to avoid traffic peak.")
-        
         return insights
     }
 }

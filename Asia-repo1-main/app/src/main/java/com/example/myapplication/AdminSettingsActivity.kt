@@ -12,11 +12,20 @@ import com.example.myapplication.utils.SessionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.LinearLayout
+import android.widget.Toast
+import com.example.myapplication.models.Truck
 import com.example.myapplication.utils.CustomNotification
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class AdminSettingsActivity : AppCompatActivity() {
     private lateinit var sessionManager: SessionManager
+
+    private val truckList = mutableListOf(
+        Truck("Truck-001", "ABC-123", "John Doe", "Active", 85, true),
+        Truck("Truck-002", "XYZ-789", "Robert Smith", "Maintenance", 0, false)
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,9 +55,6 @@ class AdminSettingsActivity : AppCompatActivity() {
             showModal(R.layout.dialog_manage_trucks)
         }
 
-        findViewById<android.view.View>(R.id.row_route_planning).setOnClickListener {
-            showModal(R.layout.dialog_route_planning)
-        }
         findViewById<android.view.View>(R.id.row_change_password).setOnClickListener {
             showModal(R.layout.dialog_change_password)
         }
@@ -87,14 +93,14 @@ class AdminSettingsActivity : AppCompatActivity() {
 
         // Additional logic for specific dialogs if needed
         if (layoutResId == R.layout.dialog_manage_trucks) {
+            val container = dialogView.findViewById<LinearLayout>(R.id.container_trucks)
+            refreshTruckList(container)
+
             dialogView.findViewById<android.view.View>(R.id.btn_add_new_truck)?.setOnClickListener {
-                showModal(R.layout.dialog_add_truck)
-            }
-            dialogView.findViewById<android.view.View>(R.id.btn_edit_truck_1)?.setOnClickListener {
-                showEditTruckModal("Truck-001", "ABC-123", "John Doe", "Active")
-            }
-            dialogView.findViewById<android.view.View>(R.id.btn_edit_truck_2)?.setOnClickListener {
-                showEditTruckModal("Truck-002", "XYZ-789", "Robert Smith", "Maintenance")
+                showAddTruckModal { newTruck ->
+                    truckList.add(newTruck)
+                    refreshTruckList(container)
+                }
             }
         }
 
@@ -146,7 +152,39 @@ class AdminSettingsActivity : AppCompatActivity() {
         alertDialog.show()
     }
 
-    private fun showEditTruckModal(truckId: String, plateNumber: String, driverName: String, status: String) {
+    private fun refreshTruckList(container: LinearLayout?) {
+        container?.removeAllViews()
+        val inflater = LayoutInflater.from(this)
+
+        truckList.forEach { truck ->
+            val itemView = inflater.inflate(R.layout.item_truck, container, false)
+            
+            itemView.findViewById<TextView>(R.id.tv_truck_title).text = "${truck.truckId} (${truck.plateNumber})"
+            val statusColor = if (truck.status == "Active") "#4CAF50" else if (truck.status == "Maintenance") "#D32F2F" else "#757575"
+            val statusView = itemView.findViewById<TextView>(R.id.tv_truck_status)
+            statusView.text = "Status: ${truck.status} • Fuel: ${truck.fuelLevel}%"
+            statusView.setTextColor(android.graphics.Color.parseColor(statusColor))
+
+            itemView.findViewById<SwitchMaterial>(R.id.switch_truck_active).apply {
+                isChecked = truck.isActive
+                setOnCheckedChangeListener { _, isChecked ->
+                    truck.isActive = isChecked
+                    truck.status = if (isChecked) "Active" else "Inactive"
+                    refreshTruckList(container)
+                }
+            }
+
+            itemView.findViewById<android.view.View>(R.id.btn_edit_truck).setOnClickListener {
+                showEditTruckModal(truck) {
+                    refreshTruckList(container)
+                }
+            }
+
+            container?.addView(itemView)
+        }
+    }
+
+    private fun showAddTruckModal(onSaved: (Truck) -> Unit) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_truck, null)
         val alertDialog = AlertDialog.Builder(this)
             .setView(dialogView)
@@ -155,18 +193,54 @@ class AdminSettingsActivity : AppCompatActivity() {
 
         alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        // Setup status dropdown
+        val statusSpinner = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.spinner_status)
+        val statuses = arrayOf("Active", "Inactive", "Maintenance")
+        val adapter = android.widget.ArrayAdapter(this, R.layout.dropdown_item, statuses)
+        statusSpinner?.setAdapter(adapter)
+        statusSpinner?.setText(statuses[0], false)
+
+        dialogView.findViewById<android.view.View>(R.id.btn_close)?.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        dialogView.findViewById<MaterialButton>(R.id.btn_save_truck)?.setOnClickListener {
+            val id = dialogView.findViewById<android.widget.EditText>(R.id.et_truck_id).text.toString()
+            val plate = dialogView.findViewById<android.widget.EditText>(R.id.et_plate_number).text.toString()
+            val driver = dialogView.findViewById<android.widget.EditText>(R.id.et_driver_name).text.toString()
+            val status = statusSpinner.text.toString()
+
+            if (id.isNotEmpty() && plate.isNotEmpty()) {
+                val newTruck = Truck(id, plate, driver, status, 100, status == "Active")
+                onSaved(newTruck)
+                Toast.makeText(this, "Truck Added Successfully", Toast.LENGTH_SHORT).show()
+                alertDialog.dismiss()
+            } else {
+                Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        alertDialog.show()
+    }
+
+    private fun showEditTruckModal(truck: Truck, onUpdated: () -> Unit) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_truck, null)
+        val alertDialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
         val statusSpinner = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.spinner_status)
         val statuses = arrayOf("Active", "Inactive", "Maintenance")
         val adapter = android.widget.ArrayAdapter(this, R.layout.dropdown_item, statuses)
         statusSpinner?.setAdapter(adapter)
 
-        // Set current values
         dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "Edit Truck"
-        dialogView.findViewById<android.widget.EditText>(R.id.et_truck_id)?.setText(truckId)
-        dialogView.findViewById<android.widget.EditText>(R.id.et_plate_number)?.setText(plateNumber)
-        dialogView.findViewById<android.widget.EditText>(R.id.et_driver_name)?.setText(driverName)
-        statusSpinner?.setText(status, false)
+        dialogView.findViewById<android.widget.EditText>(R.id.et_truck_id)?.setText(truck.truckId)
+        dialogView.findViewById<android.widget.EditText>(R.id.et_plate_number)?.setText(truck.plateNumber)
+        dialogView.findViewById<android.widget.EditText>(R.id.et_driver_name)?.setText(truck.driverName)
+        statusSpinner?.setText(truck.status, false)
 
         dialogView.findViewById<MaterialButton>(R.id.btn_save_truck)?.text = "Update Truck"
 
@@ -175,8 +249,14 @@ class AdminSettingsActivity : AppCompatActivity() {
         }
 
         dialogView.findViewById<MaterialButton>(R.id.btn_save_truck)?.setOnClickListener {
-            // Handle update logic
-            android.widget.Toast.makeText(this, "Truck Updated Successfully", android.widget.Toast.LENGTH_SHORT).show()
+            truck.truckId = dialogView.findViewById<android.widget.EditText>(R.id.et_truck_id).text.toString()
+            truck.plateNumber = dialogView.findViewById<android.widget.EditText>(R.id.et_plate_number).text.toString()
+            truck.driverName = dialogView.findViewById<android.widget.EditText>(R.id.et_driver_name).text.toString()
+            truck.status = statusSpinner.text.toString()
+            truck.isActive = truck.status == "Active"
+
+            onUpdated()
+            Toast.makeText(this, "Truck Updated Successfully", Toast.LENGTH_SHORT).show()
             alertDialog.dismiss()
         }
 

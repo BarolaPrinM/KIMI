@@ -44,7 +44,9 @@ data class UserData(
     @SerializedName("license_number") var licenseNumber: String? = null,
     @get:PropertyName("preferred_truck") @set:PropertyName("preferred_truck")
     @SerializedName("preferred_truck") var preferredTruck: String? = null,
-    @get:Exclude @set:Exclude var requestId: String? = null
+    @get:Exclude @set:Exclude var requestId: String? = null,
+    @SerializedName("is_archived") val isArchived: Int = 0,
+    @SerializedName("created_at") val createdAt: String? = null
 )
 
 data class UsersResponse(
@@ -52,4 +54,10 @@ data class UsersResponse(
     val message: String?,
     val residents: List<UserData>?,
     val users: List<UserData>?
+)
+
+data class ArchiveRequest(
+    @SerializedName("user_id") val userId: Int,
+    val role: String,
+    @SerializedName("is_archived") val isArchived: Int
 )

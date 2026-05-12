@@ -47,12 +47,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="System configuration"
-                android:textColor="#757575"
-                android:textSize="12sp" />
+
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -258,6 +253,7 @@
                                 android:textColor="#757575" />
                         </LinearLayout>
                         <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_email_notifications"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
@@ -292,6 +288,7 @@
                                 android:textColor="#757575" />
                         </LinearLayout>
                         <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_app_notifications"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
@@ -444,97 +441,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- System Configuration Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="6dp"
-                app:cardUseCompatPadding="true"
-                app:strokeWidth="0dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_settings"
-                            app:tint="#333333" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="System Configuration"
-                            android:textStyle="bold"
-                            android:textColor="#1A1A1A" />
-                    </LinearLayout>
-
-
-
-                    <LinearLayout
-                        android:id="@+id/row_manage_trucks"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="14dp"
-                        android:background="@drawable/ripple_green"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:paddingHorizontal="12dp">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Truck Fleet Management"
-                            android:textColor="#333333"
-                            android:textSize="14sp" />
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_chevron_right"
-                            app:tint="#BDBDBD" />
-                    </LinearLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F5F5F5" />
-
-
-
-                    <LinearLayout
-                        android:id="@+id/row_route_planning"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="14dp"
-                        android:background="@drawable/ripple_green"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:paddingHorizontal="12dp">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Route Planning"
-                            android:textColor="#333333"
-                            android:textSize="14sp" />
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_chevron_right"
-                            app:tint="#BDBDBD" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
             <!-- Security Section -->
             <com.google.android.material.card.MaterialCardView

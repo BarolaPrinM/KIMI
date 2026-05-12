@@ -12,6 +12,24 @@ class SessionManager(context: Context) {
     companion object {
         private const val KEY_USER_DATA = "user_data"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        private const val KEY_APP_NOTIFICATIONS = "app_notifications_enabled"
+        private const val KEY_EMAIL_NOTIFICATIONS = "email_notifications_enabled"
+    }
+
+    fun setAppNotificationsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_APP_NOTIFICATIONS, enabled).apply()
+    }
+
+    fun isAppNotificationsEnabled(): Boolean {
+        return prefs.getBoolean(KEY_APP_NOTIFICATIONS, true)
+    }
+
+    fun setEmailNotificationsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_EMAIL_NOTIFICATIONS, enabled).apply()
+    }
+
+    fun isEmailNotificationsEnabled(): Boolean {
+        return prefs.getBoolean(KEY_EMAIL_NOTIFICATIONS, true)
     }
 
     fun saveUser(user: UserData) {

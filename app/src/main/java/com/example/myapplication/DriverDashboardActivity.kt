@@ -65,13 +65,64 @@ class DriverDashboardActivity : AppCompatActivity() {
         setupStatusControls()
         setupSettingsTab()
         setupSettingsClickListeners()
+        setupDemoControls()
         setupMap(isFullMode = false)
         checkLocationPermissions()
-        
-        // Initial setup for Dashboard
+    }
+
+    private fun setupDemoControls() {
         val user = sessionManager.getUser()
-        tvDriverName.text = user?.name ?: "Pedro Santos"
-        tvTruckId.text = "Truck: ${user?.preferredTruck ?: "GT-001"}"
+        val truckId = user?.preferredTruck ?: "GT-001"
+        val driverName = user?.name ?: "Pedro Santos"
+        val database = com.google.firebase.database.FirebaseDatabase.getInstance("https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app")
+
+        findViewById<android.view.View>(R.id.btn_manual_alert).setOnClickListener {
+            val zones = com.example.myapplication.utils.PurokManager.purokZones.map { it.name }.toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("Send Manual Alert")
+                .setItems(zones) { _, which ->
+                    val selectedPurok = zones[which]
+                    val alertData = mapOf(
+                        "message" to "🚛 Manual Alert: The garbage truck is heading to $selectedPurok. Please prepare your trash!",
+                        "timestamp" to System.currentTimeMillis(),
+                        "driver" to driverName,
+                        "truck_id" to truckId,
+                        "type" to "MANUAL_ALERT"
+                    )
+                    database.getReference("alerts").child(selectedPurok).setValue(alertData)
+                    android.widget.Toast.makeText(this, "Alert sent to $selectedPurok", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                .show()
+        }
+
+        findViewById<android.view.View>(R.id.btn_demo_teleport).setOnClickListener {
+            val zones = com.example.myapplication.utils.PurokManager.purokZones
+            val zoneNames = zones.map { it.name }.toTypedArray()
+            
+            AlertDialog.Builder(this)
+                .setTitle("Demo: Teleport Truck")
+                .setItems(zoneNames) { _, which ->
+                    val target = zones[which]
+                    val truckData = mapOf(
+                        "truckId" to truckId,
+                        "driverName" to driverName,
+                        "latitude" to target.latitude,
+                        "longitude" to target.longitude,
+                        "speed" to 20.0,
+                        "isFull" to false,
+                        "status" to "active",
+                        "updatedAt" to System.currentTimeMillis().toString()
+                    )
+                    database.getReference("truck_locations").child(truckId).setValue(truckData)
+                    android.widget.Toast.makeText(this, "Teleported to ${target.name}. Geofence logic triggered!", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                .show()
+        }
+
+        // Initial setup for Dashboard
+        val user2 = sessionManager.getUser()
+        tvDriverName.text = user2?.name ?: "Pedro Santos"
+        tvTruckId.text = "Truck: ${user2?.preferredTruck ?: "GT-001"}"
     }
 
     private fun initializeViews() {
@@ -154,6 +205,40 @@ class DriverDashboardActivity : AppCompatActivity() {
 
             alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
+            // Special logic for Report Issue
+            if (layoutResId == R.layout.dialog_report_truck_issue) {
+                val btnSubmit = dialogView.findViewById<android.widget.Button>(R.id.btn_submit_report)
+                val etType = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_issue_type)
+                val etDesc = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_issue_description)
+                
+                btnSubmit.setOnClickListener {
+                    val type = etType.text.toString()
+                    val desc = etDesc.text.toString()
+                    
+                    if (type.isNotEmpty() && desc.isNotEmpty()) {
+                        val user = sessionManager.getUser()
+                        val notification = com.example.myapplication.models.SystemNotification(
+                            type = "DRIVER_ISSUE",
+                            title = "New Driver Issue: $type",
+                            message = "${user?.name ?: "Driver"} reported an issue: $desc",
+                            timestamp = System.currentTimeMillis(),
+                            isRead = false,
+                            relatedId = user?.userId?.toString() ?: ""
+                        )
+                        
+                        val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+                        com.google.firebase.database.FirebaseDatabase.getInstance(dbUrl)
+                            .getReference("notifications").push().setValue(notification)
+                            
+                        com.example.myapplication.utils.CustomNotification.showTopNotification(this, "Issue report submitted to Admin", false)
+                        alertDialog.dismiss()
+                    } else {
+                        android.widget.Toast.makeText(this, "Please fill all fields", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            dialogView.findViewById<android.view.View>(R.id.btn_cancel)?.setOnClickListener { alertDialog.dismiss() }
             dialogView.findViewById<android.view.View>(R.id.btn_close)?.setOnClickListener {
                 alertDialog.dismiss()
             }

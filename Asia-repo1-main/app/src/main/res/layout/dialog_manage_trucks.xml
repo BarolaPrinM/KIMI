@@ -44,73 +44,18 @@
             android:textColor="#757575"
             android:textSize="14sp" />
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:orientation="vertical">
-
-            <!-- Truck Row 1 -->
+            android:layout_marginTop="20dp">
             <LinearLayout
+                android:id="@+id/container_trucks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:paddingVertical="12dp">
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Truck-001 (ABC-123)" android:textColor="#333333" android:textStyle="bold" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Status: Active • Fuel: 85%" android:textColor="#4CAF50" android:textSize="12sp" />
-                </LinearLayout>
-
-                <ImageButton
-                    android:id="@+id/btn_edit_truck_1"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_circle_logo"
-                    android:backgroundTint="#E8F5E9"
-                    android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_edit"
-                    app:tint="#2E7D32" />
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    app:thumbTint="@color/switch_thumb_selector"
-                    app:trackTint="@color/switch_track_selector" />
+                android:orientation="vertical">
+                <!-- Dynamic trucks will be added here -->
             </LinearLayout>
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" />
-
-            <!-- Truck Row 2 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:paddingVertical="12dp">
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Truck-002 (XYZ-789)" android:textColor="#333333" android:textStyle="bold" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Status: Maintenance" android:textColor="#D32F2F" android:textSize="12sp" />
-                </LinearLayout>
-
-                <ImageButton
-                    android:id="@+id/btn_edit_truck_2"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_circle_logo"
-                    android:backgroundTint="#E8F5E9"
-                    android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_edit"
-                    app:tint="#2E7D32" />
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="false"
-                    app:thumbTint="@color/switch_thumb_selector"
-                    app:trackTint="@color/switch_track_selector" />
-            </LinearLayout>
-        </LinearLayout>
+        </ScrollView>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_add_new_truck"

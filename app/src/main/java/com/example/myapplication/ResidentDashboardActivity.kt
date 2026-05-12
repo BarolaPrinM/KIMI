@@ -137,14 +137,15 @@ class ResidentDashboardActivity : AppCompatActivity() {
             val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
             val db = FirebaseDatabase.getInstance(dbUrl)
             
-            // 1. Send Alert (for Notification)
+            // 1. Send Alert (for Notification) - Simulating an Arrival Alert
             val alertData = mapOf(
-                "message" to "Approaching $purok",
+                "message" to "The garbage truck has arrived at $purok. Please bring out your trash!",
                 "timestamp" to System.currentTimeMillis(),
                 "driver" to driverName,
                 "truck_id" to truckId,
                 "latitude" to lat,
-                "longitude" to lng
+                "longitude" to lng,
+                "type" to "ARRIVAL_ALERT"
             )
             db.getReference("alerts").child(purok).setValue(alertData)
             
