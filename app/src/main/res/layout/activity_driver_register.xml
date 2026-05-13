@@ -89,12 +89,10 @@
                             android:layout_height="24dp"
                             android:layout_marginEnd="8dp"
                             android:src="@android:drawable/ic_lock_idle_lock"
-                            app:tint="@color/driver_icon" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Driver Credentials"
-                            android:textColor="@color/driver_icon"
                             android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -241,12 +239,10 @@
                             android:layout_height="24dp"
                             android:layout_marginEnd="8dp"
                             android:src="@drawable/ic_truck"
-                            app:tint="@color/driver_icon" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Work Information"
-                            android:textColor="@color/driver_icon"
                             android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -307,19 +303,14 @@
                         android:textColor="#333333"
                         android:textSize="12sp"
                         android:textStyle="bold" />
-                    <EditText
-                        android:id="@+id/et_contact_number"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="4dp"
                         android:background="@drawable/edit_text_background"
-                        android:hint="Enter Contact Number"
                         android:textColorHint="@color/input_hint_color"
                         android:textColor="@color/input_text_color"
                         android:inputType="phone"
                         android:importantForAutofill="no"
-                        android:maxLength="11"
-                        android:paddingHorizontal="12dp"
                         android:textSize="14sp"
                         android:textCursorDrawable="@null" />
 
@@ -375,7 +366,6 @@
                                 android:id="@+id/tv_submit_text"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Register as Driver"
                                 android:textColor="@android:color/white"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
