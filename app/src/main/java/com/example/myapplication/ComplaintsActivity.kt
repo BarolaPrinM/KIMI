@@ -188,8 +188,8 @@ class ComplaintsActivity : AppCompatActivity() {
 
         applyStatusStyle(tvStatus, status, layoutActions, btnInProgress, layoutAdminResponse, tvAdminResponse, complaint.adminResponse, layoutResolvedDate, tvResolvedDate, complaint.updatedAt ?: complaint.createdAt)
 
-        btnInProgress.setOnClickListener { updateComplaintStatus(complaint.id, "in_progress") }
-        btnResolve.setOnClickListener { showResolveDialog(complaint.id.toString(), true) }
+        btnInProgress.setOnClickListener { updateComplaintStatus(complaint.id, "in_progress", null, complaint.userId) }
+        btnResolve.setOnClickListener { showResolveDialog(complaint.id.toString(), true, complaint.userId) }
 
         complaintsContainer.addView(cardView)
     }
@@ -255,16 +255,46 @@ class ComplaintsActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateComplaintStatus(id: Int, status: String, response: String? = null) {
-        RetrofitClient.instance.updateComplaint(id, status, response).enqueue(object : Callback<com.example.myapplication.models.ApiResponse> {
+    private fun updateComplaintStatus(id: Int, status: String, adminResponse: String? = null, userId: Int? = null) {
+        RetrofitClient.instance.updateComplaint(id, status, adminResponse).enqueue(object : Callback<com.example.myapplication.models.ApiResponse> {
             override fun onResponse(call: Call<com.example.myapplication.models.ApiResponse>, response: Response<com.example.myapplication.models.ApiResponse>) {
-                if (response.isSuccessful && response.body()?.success == true) fetchComplaints()
+                if (response.isSuccessful && response.body()?.success == true) {
+                    fetchComplaints()
+                    if (userId != null) {
+                        sendNotificationToResident(userId, status, adminResponse)
+                    }
+                }
                 else Toast.makeText(this@ComplaintsActivity, "Update failed", Toast.LENGTH_SHORT).show()
             }
             override fun onFailure(call: Call<com.example.myapplication.models.ApiResponse>, t: Throwable) {
                 Toast.makeText(this@ComplaintsActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun sendNotificationToResident(userId: Int, status: String, adminResponse: String?) {
+        val title = when(status.uppercase()) {
+            "IN_PROGRESS" -> "Complaint Update: In Progress"
+            "RESOLVED" -> "Complaint Update: Resolved"
+            else -> "Complaint Update"
+        }
+        val message = if (status.uppercase() == "RESOLVED") {
+            "Your complaint has been resolved. Response: ${adminResponse ?: "No message provided."}"
+        } else {
+            "Admin has started working on your complaint."
+        }
+
+        val notification = com.example.myapplication.models.SystemNotification(
+            type = "COMPLAINT",
+            title = title,
+            message = message,
+            timestamp = System.currentTimeMillis(),
+            isRead = false,
+            adminResponse = adminResponse,
+            status = status
+        )
+
+        database.getReference("notifications").child(userId.toString()).push().setValue(notification)
     }
 
     private fun updateIssueStatus(id: String, status: String, response: String? = null) {
@@ -274,14 +304,14 @@ class ComplaintsActivity : AppCompatActivity() {
             .addOnSuccessListener { Toast.makeText(this, "Status updated", Toast.LENGTH_SHORT).show() }
     }
 
-    private fun showResolveDialog(id: String, isComplaint: Boolean) {
+    private fun showResolveDialog(id: String, isComplaint: Boolean, userId: Int? = null) {
         val editText = android.widget.EditText(this)
         editText.hint = "Enter admin response"
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Resolve")
             .setView(editText)
             .setPositiveButton("Resolve") { _, _ ->
-                if (isComplaint) updateComplaintStatus(id.toInt(), "RESOLVED", editText.text.toString())
+                if (isComplaint) updateComplaintStatus(id.toInt(), "RESOLVED", editText.text.toString(), userId)
                 else updateIssueStatus(id, "RESOLVED", editText.text.toString())
             }
             .setNegativeButton("Cancel", null)

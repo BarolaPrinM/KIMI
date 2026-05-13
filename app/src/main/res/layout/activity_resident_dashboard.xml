@@ -73,26 +73,65 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/btn_logout"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#26FFFFFF"
-                    app:strokeWidth="0dp">
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_logout"
-                        app:tint="@android:color/white" />
-                </com.google.android.material.card.MaterialCardView>
+                    android:orientation="horizontal">
 
-                <!-- Truck Nearby Alert (CLICK TO TEST) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_notifications"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="#26FFFFFF"
+                        app:strokeWidth="0dp">
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="10dp"
+                                android:src="@drawable/ic_notifications"
+                                app:tint="@android:color/white" />
+                            <View
+                                android:id="@+id/view_notification_dot"
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/circle_white"
+                                android:backgroundTint="#FF5252"
+                                android:visibility="gone" />
+                        </RelativeLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_logout"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="#26FFFFFF"
+                        app:strokeWidth="0dp">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_logout"
+                            app:tint="@android:color/white" />
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Truck Nearby Alert (DYNAMIC) -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardNearbyAlert"
                     android:layout_width="match_parent"
@@ -101,6 +140,7 @@
                     android:layout_marginTop="24dp"
                     android:clickable="true"
                     android:focusable="true"
+                    android:visibility="gone"
                     app:cardCornerRadius="24dp"
                     app:cardElevation="12dp"
                     app:cardBackgroundColor="#F2FFFFFF"
@@ -142,6 +182,7 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center_vertical">
                                 <TextView
+                                    android:id="@+id/tvNearbyTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="🚛 Truck Nearby!"
@@ -163,6 +204,7 @@
                             </LinearLayout>
 
                             <TextView
+                                android:id="@+id/tvNearbyMessage"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="GT-001 is currently in Purok 2. Please prepare your waste for collection."

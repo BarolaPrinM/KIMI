@@ -22,7 +22,7 @@ class NotificationAdapter(
 
     class NotificationViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val cardViewParent: MaterialCardView = view.findViewById(R.id.card_view_parent)
-        val iconContainer: View = view.findViewById(R.id.card_icon_bg)
+        val iconContainer: MaterialCardView = view.findViewById(R.id.card_icon_bg)
         val ivIcon: ImageView = view.findViewById(R.id.iv_notification_icon)
         val tvTitle: TextView = view.findViewById(R.id.tv_notification_title)
         val tvMessage: TextView = view.findViewById(R.id.tv_notification_message)
@@ -53,25 +53,25 @@ class NotificationAdapter(
         // Style based on type
         when (notification.type) {
             "COMPLAINT" -> {
-                holder.iconContainer.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FFF3E0"))
+                holder.iconContainer.setCardBackgroundColor(Color.parseColor("#E0F2F1"))
                 holder.ivIcon.setImageResource(R.drawable.ic_complaints)
-                holder.ivIcon.imageTintList = ColorStateList.valueOf(Color.parseColor("#FF9800"))
-                holder.cardViewParent.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#FFE0B2")))
+                holder.ivIcon.imageTintList = ColorStateList.valueOf(Color.parseColor("#00BFA5"))
+                holder.cardViewParent.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#2000BFA5")))
             }
             "REGISTRATION" -> {
-                holder.iconContainer.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E8F5E9"))
+                holder.iconContainer.setCardBackgroundColor(Color.parseColor("#E8F5E9"))
                 holder.ivIcon.setImageResource(android.R.drawable.ic_menu_add)
                 holder.ivIcon.imageTintList = ColorStateList.valueOf(Color.parseColor("#4CAF50"))
                 holder.cardViewParent.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#C8E6C9")))
             }
             "DRIVER_ISSUE" -> {
-                holder.iconContainer.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                holder.iconContainer.setCardBackgroundColor(Color.parseColor("#FFEBEE"))
                 holder.ivIcon.setImageResource(R.drawable.ic_complaints)
                 holder.ivIcon.imageTintList = ColorStateList.valueOf(Color.parseColor("#D32F2F"))
                 holder.cardViewParent.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#FFCDD2")))
             }
             else -> {
-                holder.iconContainer.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E3F2FD"))
+                holder.iconContainer.setCardBackgroundColor(Color.parseColor("#E3F2FD"))
                 holder.ivIcon.setImageResource(R.drawable.ic_notifications)
                 holder.ivIcon.imageTintList = ColorStateList.valueOf(Color.parseColor("#2196F3"))
                 holder.cardViewParent.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#BBDEFB")))

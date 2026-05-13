@@ -31,6 +31,11 @@ class ResidentDashboardActivity : AppCompatActivity() {
     private lateinit var tvUserPurok: TextView
     private lateinit var tvActiveTrucksCount: TextView
     private lateinit var tvEstimatedTime: TextView
+    private lateinit var cardNearbyAlert: MaterialCardView
+    private lateinit var tvNearbyTitle: TextView
+    private lateinit var tvNearbyMessage: TextView
+    private lateinit var viewNotificationDot: View
+    private var lastProcessedAlertTimestamp: Long = 0L
     private var mapFragment: MapboxFragment? = null
     private var isGpsActive: Boolean = true
 
@@ -61,6 +66,10 @@ class ResidentDashboardActivity : AppCompatActivity() {
         tvUserPurok = findViewById(R.id.tvUserPurok)
         tvActiveTrucksCount = findViewById(R.id.tvActiveTrucksCount)
         tvEstimatedTime = findViewById(R.id.tvEstimatedTime)
+        cardNearbyAlert = findViewById(R.id.cardNearbyAlert)
+        tvNearbyTitle = findViewById(R.id.tvNearbyTitle)
+        tvNearbyMessage = findViewById(R.id.tvNearbyMessage)
+        viewNotificationDot = findViewById(R.id.view_notification_dot)
 
         val user = sessionManager.getUser()
         tvWelcome.text = user?.name ?: "Juan Dela Cruz"
@@ -75,10 +84,87 @@ class ResidentDashboardActivity : AppCompatActivity() {
         }
 
         setupClickListeners()
-        setupTestTrigger()
         setupBottomNavigation()
         setupLogout()
+        setupNotificationListener()
+        setupNearbyAlertListener()
         checkLocationPermissions()
+    }
+
+    private fun setupNotificationListener() {
+        val user = sessionManager.getUser() ?: return
+        val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+        val notificationsRef = FirebaseDatabase.getInstance(dbUrl).getReference("notifications").child(user.userId.toString())
+
+        notificationsRef.addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                var unreadCount = 0
+                for (notifSnapshot in snapshot.children) {
+                    val isRead = notifSnapshot.child("isRead").getValue(Boolean::class.java) ?: false
+                    if (!isRead) unreadCount++
+                }
+                viewNotificationDot.visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        })
+    }
+
+    private fun setupNearbyAlertListener() {
+        val user = sessionManager.getUser() ?: return
+        val purok = user.purok ?: "Purok 2"
+        val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+        val alertRef = FirebaseDatabase.getInstance(dbUrl).getReference("alerts").child(purok)
+        val notificationsRef = FirebaseDatabase.getInstance(dbUrl).getReference("notifications").child(user.userId.toString())
+
+        alertRef.addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (snapshot.exists()) {
+                    val message = snapshot.child("message").getValue(String::class.java) ?: ""
+                    val timestamp = snapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                    val type = snapshot.child("type").getValue(String::class.java) ?: "ALERT"
+                    val truckId = snapshot.child("truck_id").getValue(String::class.java) ?: "Unknown"
+                    
+                    // Show alert if it's less than 30 minutes old
+                    val now = System.currentTimeMillis()
+                    if (now - timestamp < 30 * 60 * 1000) {
+                        tvNearbyMessage.text = message
+                        cardNearbyAlert.visibility = View.VISIBLE
+
+                        // Capture new alerts into history
+                        if (timestamp > lastProcessedAlertTimestamp) {
+                            lastProcessedAlertTimestamp = timestamp
+                            saveAlertToHistory(notificationsRef, title = "Truck Update: $truckId", message = message, type = type, timestamp = timestamp)
+                        }
+                    } else {
+                        cardNearbyAlert.visibility = View.GONE
+                    }
+                } else {
+                    cardNearbyAlert.visibility = View.GONE
+                }
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        })
+    }
+
+    private fun saveAlertToHistory(ref: com.google.firebase.database.DatabaseReference, title: String, message: String, type: String, timestamp: Long) {
+        // Check if this specific alert already exists in history to avoid duplicates
+        ref.orderByChild("timestamp").equalTo(timestamp.toDouble()).addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (!snapshot.exists()) {
+                    val notification = com.example.myapplication.models.SystemNotification(
+                        type = type,
+                        title = title,
+                        message = message,
+                        timestamp = timestamp,
+                        isRead = false
+                    )
+                    ref.push().setValue(notification)
+                }
+            }
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        })
     }
 
     private fun checkLocationPermissions() {
@@ -207,6 +293,10 @@ class ResidentDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
+        findViewById<View>(R.id.btn_notifications).setOnClickListener {
+            showNotificationsDialog()
+        }
+
         findViewById<MaterialCardView>(R.id.cardTrackTruckQuick).setOnClickListener {
             startActivity(Intent(this, TrackTrucksActivity::class.java))
         }
@@ -222,6 +312,72 @@ class ResidentDashboardActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvFullMap).setOnClickListener {
             startActivity(Intent(this, TrackTrucksActivity::class.java))
         }
+    }
+
+    private fun showNotificationsDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_notifications, null)
+        val alertDialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val rvNotifications = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rv_notifications)
+        val llEmpty = dialogView.findViewById<android.widget.LinearLayout>(R.id.ll_empty_state)
+        val btnClearAll = dialogView.findViewById<TextView>(R.id.btn_clear_all)
+        val btnClose = dialogView.findViewById<Button>(R.id.btn_close)
+
+        rvNotifications.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        
+        val user = sessionManager.getUser()
+        val dbUrl = "https://garbagesis-78d39-default-rtdb.asia-southeast1.firebasedatabase.app"
+        val notificationsRef = FirebaseDatabase.getInstance(dbUrl).getReference("notifications").child(user?.userId.toString())
+
+        val notificationList = mutableListOf<com.example.myapplication.models.SystemNotification>()
+        val adapter = com.example.myapplication.adapters.NotificationAdapter(this, notificationList) { notification ->
+            // Mark as read
+            if (!notification.isRead) {
+                notificationsRef.child(notification.id).child("isRead").setValue(true)
+            }
+            // Handle specific actions if needed (e.g. open complaint detail)
+        }
+        rvNotifications.adapter = adapter
+
+        notificationsRef.orderByChild("timestamp").addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                notificationList.clear()
+                for (notifSnapshot in snapshot.children) {
+                    val notif = notifSnapshot.getValue(com.example.myapplication.models.SystemNotification::class.java)
+                    if (notif != null) {
+                        notif.id = notifSnapshot.key ?: ""
+                        notificationList.add(notif)
+                    }
+                }
+                notificationList.sortByDescending { it.timestamp }
+                
+                if (notificationList.isEmpty()) {
+                    rvNotifications.visibility = View.GONE
+                    llEmpty?.visibility = View.VISIBLE
+                } else {
+                    rvNotifications.visibility = View.VISIBLE
+                    llEmpty?.visibility = View.GONE
+                    adapter.updateData(notificationList)
+                }
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        })
+
+        btnClearAll.setOnClickListener {
+            notificationsRef.removeValue()
+        }
+
+        btnClose.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        alertDialog.show()
     }
 
     private fun showFeedbackDialog() {
