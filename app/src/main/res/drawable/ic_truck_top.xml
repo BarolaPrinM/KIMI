@@ -1,0 +1,76 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="100dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="200">
+
+    <!-- The Light Beam (Shortened Range Fade) -->
+    <!-- Starts at front edge (y=95), ends at y=65 -->
+    <path android:pathData="M35,95 L65,95 L75,65 L25,65 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="50"
+                android:endY="65"
+                android:startX="50"
+                android:startY="95"
+                android:type="linear">
+                <item android:color="#A000BFA5" android:offset="0.0" />
+                <item android:color="#0000BFA5" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Side Mirrors (Realistic Arms + Mirrors) -->
+    <!-- Left Mirror -->
+    <path
+        android:fillColor="#37474F"
+        android:pathData="M30,105 L24,105 L24,103 Q23,103 23,104 L23,112 Q23,113 24,113 L26,113 L26,107 L30,107 Z" />
+    <!-- Right Mirror -->
+    <path
+        android:fillColor="#37474F"
+        android:pathData="M70,105 L76,105 L76,103 Q77,103 77,104 L77,112 Q77,113 76,113 L74,113 L74,107 L70,107 Z" />
+
+    <!-- Garbage Truck Body (Compartment) -->
+    <path
+        android:fillColor="#455A64"
+        android:pathData="M32,125 L68,125 Q71,125 71,128 L71,195 Q71,200 68,200 L32,200 Q29,200 29,195 L29,128 Q29,125 32,125 Z" />
+
+    <!-- Body Ridges -->
+    <path
+        android:strokeColor="#37474F"
+        android:strokeWidth="1.5"
+        android:pathData="M29,140 L71,140 M29,152 L71,152 M29,164 L71,164 M29,176 L71,176 M29,188 L71,188" />
+
+    <!-- Gap/Neck Connection -->
+    <path
+        android:fillColor="#263238"
+        android:pathData="M42,123 L58,123 L58,125 L42,125 Z" />
+
+    <!-- Truck Cab Body -->
+    <path
+        android:fillColor="#00BFA5"
+        android:pathData="M35,94 L65,94 Q70,94 70,99 L70,123 L30,123 L30,99 Q30,94 35,94 Z" />
+
+    <!-- Front Windshield (Moved to Front) -->
+    <path
+        android:fillColor="#263238"
+        android:pathData="M37,98 L63,98 Q65,98 65,100 L65,106 L35,106 L35,100 Q35,98 37,98 Z" />
+
+    <!-- Side Windows (Behind Windshield) -->
+    <path
+        android:fillColor="#263238"
+        android:pathData="M32,108 L35,108 L35,120 L32,120 Z" />
+    <path
+        android:fillColor="#263238"
+        android:pathData="M65,108 L68,108 L68,120 L65,120 Z" />
+
+    <!-- Headlights (Actual Bulbs at the very front) -->
+    <path
+        android:fillColor="#B9F6CA"
+        android:pathData="M32,95 L38,95 L38,98 L32,98 Z" />
+    <path
+        android:fillColor="#B9F6CA"
+        android:pathData="M62,95 L68,95 L68,98 L62,98 Z" />
+
+</vector>
